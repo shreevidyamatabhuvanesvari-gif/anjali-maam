@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>अंजली मैम • Control Center</title>
+
+<style>
+:root{
+  --bg1:#fff3ea;
+  --bg2:#ffe1cf;
+  --accent:#8b2d2d;
+  --soft:#b35c5c;
+  --card:#ffffff;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:system-ui,"Noto Sans Devanagari",sans-serif;
+  background:linear-gradient(135deg,var(--bg1),var(--bg2));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.card{
+  width:94%;
+  max-width:440px;
+  background:var(--card);
+  border-radius:22px;
+  padding:22px;
+  box-shadow:0 14px 30px rgba(0,0,0,.12);
+  text-align:center;
+}
+.title{font-size:26px;color:var(--accent)}
+.subtitle{font-size:14px;color:#555;margin-bottom:12px}
+.status{
+  background:#fff7f4;
+  border:1px solid #f3d4c7;
+  border-radius:14px;
+  padding:10px;
+  font-size:13px;
+  margin:8px 0;
+  color:#6b2c2c;
+}
+.actions{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+.btn{
+  border:none;
+  border-radius:16px;
+  padding:12px 16px;
+  font-size:14px;
+  cursor:pointer;
+  background:linear-gradient(180deg,#c96a6a,#a13f3f);
+  color:#fff;
+}
+.btn.secondary{
+  background:#fff;
+  color:var(--soft);
+  border:1px dashed #e6b2b2;
+}
+.footer{
+  font-size:11px;
+  color:#777;
+  margin-top:14px;
+}
+</style>
+</head>
+
+<body>
+<main class="card">
+
+<div class="title">🌸 अंजली मैम</div>
+<div class="subtitle">Verified Control Center</div>
+
+<div class="status" id="statusBox">
+  Phase-1: केवल आवाज़ का परीक्षण
+</div>
+
+<div class="actions">
+  <!-- Temporary Digital Board -->
+  <button class="btn" onclick="ttsTest()">🔊 TTS Test</button>
+
+  <!-- Future Panels -->
+  <button class="btn secondary" onclick="openAdmin()">🔐 Admin Panel</button>
+  <button class="btn secondary" onclick="openChat()">🖊 Digital Board</button>
+</div>
+
+<div class="footer">
+  Blueprint Locked • Index will never change again
+</div>
+
+</main>
+
+<!-- ================= VOICE (Phase-2 will replace this) ================= -->
+<script src="voice/tts.js"></script>
+<script src="voice/stt.js"></script>
+
+<!-- ================= CORE (Future) ================= -->
+<script src="core/ThinkingEngine.js"></script>
+<script src="core/PresentationEngine.js"></script>
+
+<script>
+/* ================= TEMP TTS ================= */
+function ttsTest(){
+  if(!("speechSynthesis" in window)){
+    statusBox.innerText = "❌ आपका ब्राउज़र आवाज़ सपोर्ट नहीं करता";
+    return;
+  }
+
+  const text = "नमस्ते! मैं अंजली मैम हूँ। मेरी आवाज़ सही काम कर रही है।";
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "hi-IN";
+  u.rate = 0.8;
+  u.pitch = 1.05;
+
+  statusBox.innerText = "🎤 बोल रही हूँ...";
+  speechSynthesis.speak(u);
+
+  u.onend = () => {
+    statusBox.innerText = "✅ TTS PASS — अगला चरण बनाया जा सकता है";
+  };
+}
+
+/* ================= NAV (Future ready) ================= */
+function openAdmin(){
+  location.href = "admin.html";
+}
+function openChat(){
+  location.href = "anjali_chat.html";
+}
+</script>
+
+</body>
+</html>
