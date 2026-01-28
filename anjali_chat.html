@@ -26,7 +26,7 @@ button{padding:10px 14px;border-radius:10px;border:none;background:#c96a6a;color
 
 <!-- CORE -->
 <script src="core/ThinkingEngine.js"></script>
-
+<script src="core/PresentationEngine.js"></script>
 <!-- VOICE -->
 <script src="voice/tts.js"></script>
 <script src="voice/stt.js"></script>
@@ -58,7 +58,8 @@ listenBtn.onclick = () => {
     addMsg(userText, "user");
 
     const result = ThinkingEngine.think(userText);
-    addMsg(result.text, "anjali");
+const finalText = PresentationEngine.present(result.text, userText);
+addMsg(finalText, "anjali");
 
     if (window.AnjaliTTS) {
       AnjaliTTS.speak(result.text);
