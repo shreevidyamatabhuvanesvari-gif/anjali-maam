@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>अंजली मैम • Digital Board</title>
+
+<style>
+body{margin:0;font-family:system-ui;background:#fdf4ec}
+.chat{padding:16px}
+.msg{margin:6px 0;padding:8px;border-radius:8px}
+.user{background:#fff1e6}
+.anjali{background:#f7fbff}
+.system{color:#777;font-size:12px}
+button{padding:10px 14px;border-radius:10px;border:none;background:#c96a6a;color:#fff}
+</style>
+</head>
+
+<body>
+
+<div class="chat" id="chatBox">
+  <div class="system">🎤 बोलें दबाइए</div>
+</div>
+
+<button id="listenBtn">🎤 बोलें</button>
+
+<!-- CORE -->
+<script src="core/ThinkingEngine.js"></script>
+
+<!-- VOICE -->
+<script src="voice/tts.js"></script>
+<script src="voice/stt.js"></script>
+
+<script>
+const chatBox = document.getElementById("chatBox");
+const listenBtn = document.getElementById("listenBtn");
+
+function addMsg(text, who){
+  const d = document.createElement("div");
+  d.className = "msg " + who;
+  d.innerText = text;
+  chatBox.appendChild(d);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+listenBtn.onclick = () => {
+
+  if (!window.AnjaliSTT || !AnjaliSTT.available) {
+    addMsg("❌ Mic उपलब्ध नहीं", "system");
+    return;
+  }
+
+  // 🔑 Mic unlock
+  AnjaliSTT.unlock();
+
+  // 🔥 यही असली connection है
+  AnjaliSTT.onText = function(userText){
+    addMsg(userText, "user");
+
+    const result = ThinkingEngine.think(userText);
+    addMsg(result.text, "anjali");
+
+    if (window.AnjaliTTS) {
+      AnjaliTTS.speak(result.text);
+    }
+  };
+
+  addMsg("🎤 सुन रही हूँ…", "system");
+  AnjaliSTT.start();
+};
+</script>
+
+</body>
+</html>
