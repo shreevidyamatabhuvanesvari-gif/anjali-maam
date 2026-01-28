@@ -3,155 +3,216 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>अंजली मैम • Control Center</title>
+<title>Admin Panel • अंजली मैम</title>
 
 <style>
-:root{
-  --bg1:#fff3ea;
-  --bg2:#ffe1cf;
-  --accent:#8b2d2d;
-  --soft:#b35c5c;
-  --card:#ffffff;
-}
-*{box-sizing:border-box}
 body{
   margin:0;
-  min-height:100vh;
-  font-family:system-ui,"Noto Sans Devanagari",sans-serif;
-  background:linear-gradient(135deg,var(--bg1),var(--bg2));
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  font-family:"Noto Sans Devanagari", system-ui, sans-serif;
+  background:#f4f6f8;
 }
-.card{
-  width:94%;
-  max-width:440px;
-  background:var(--card);
-  border-radius:22px;
-  padding:22px;
-  box-shadow:0 14px 30px rgba(0,0,0,.12);
-  text-align:center;
-}
-.title{font-size:26px;color:var(--accent)}
-.subtitle{font-size:14px;color:#555;margin-bottom:12px}
-.status{
-  background:#fff7f4;
-  border:1px solid #f3d4c7;
-  border-radius:14px;
-  padding:10px;
-  font-size:13px;
-  margin:8px 0;
-  color:#6b2c2c;
-}
-.board{
-  width:100%;
-  min-height:90px;
-  margin-top:10px;
-  padding:10px;
-  border-radius:12px;
-  border:1px solid #e6b2b2;
-  font-size:14px;
-  resize:none;
-}
-.actions{
-  display:flex;
-  gap:10px;
-  justify-content:center;
-  flex-wrap:wrap;
-  margin-top:10px;
-}
-.btn{
-  border:none;
-  border-radius:16px;
+header{
+  background:#1f2937;
+  color:#fff;
   padding:12px 16px;
-  font-size:14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header button{
+  border:none;
+  border-radius:10px;
+  padding:8px 14px;
+  background:#2563eb;
+  color:#fff;
   cursor:pointer;
-  background:linear-gradient(180deg,#c96a6a,#a13f3f);
+}
+main{
+  padding:16px;
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+}
+.panel{
+  background:#fff;
+  border-radius:14px;
+  padding:14px;
+  box-shadow:0 6px 18px rgba(0,0,0,.1);
+}
+.form-panel{
+  flex:1;
+  min-width:280px;
+  max-width:520px;
+}
+.list-panel{
+  flex:1;
+  min-width:260px;
+  max-width:420px;
+  max-height:75vh;
+  overflow:auto;
+}
+label{
+  font-weight:bold;
+  display:block;
+  margin-top:10px;
+}
+textarea{
+  width:100%;
+  min-height:70px;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #ccc;
+  font-size:14px;
+}
+.big{ min-height:120px; }
+.actions{
+  margin-top:10px;
+  display:flex;
+  gap:8px;
+}
+.actions button{
+  border:none;
+  border-radius:10px;
+  padding:8px 14px;
+  cursor:pointer;
+  background:#16a34a;
   color:#fff;
 }
-.btn.secondary{
-  background:#fff;
-  color:var(--soft);
-  border:1px dashed #e6b2b2;
+.actions .secondary{ background:#64748b; }
+.item{
+  border-bottom:1px solid #eee;
+  padding:8px 0;
 }
-.footer{
-  font-size:11px;
-  color:#777;
-  margin-top:14px;
+.item b{ display:block; }
+.item-actions button{
+  border:none;
+  border-radius:6px;
+  padding:4px 8px;
+  font-size:12px;
+  margin-right:4px;
+  cursor:pointer;
 }
+.edit{ background:#2563eb; color:#fff; }
+.delete{ background:#dc2626; color:#fff; }
 </style>
 </head>
 
 <body>
-<main class="card">
 
-<div class="title">🌸 अंजली मैम</div>
-<div class="subtitle">Verified Control Center</div>
+<header>
+  <div>🔐 Admin Panel • अंजली मैम</div>
+  <button onclick="goIndex()">⬅ Index</button>
+</header>
 
-<div class="status" id="statusBox">
-  Phase-1: केवल आवाज़ का परीक्षण
-</div>
+<main>
 
-<!-- 🔹 Temporary Digital Board -->
-<textarea id="tempBoard" class="board" placeholder="यह अस्थायी Digital Board है..."></textarea>
+<section class="panel form-panel">
+  <h2 id="formTitle">➕ नया ज्ञान जोड़ें</h2>
 
-<div class="actions">
-  <!-- Temporary Digital Board -->
-  <button onclick="AnjaliSTT.start()">🎤 Mic Test</button>
-  <button class="btn" onclick="ttsTest()">🔊 TTS Test</button>
+  <label>प्रश्न / विषय</label>
+  <textarea id="q"></textarea>
 
-  <!-- Future Panels -->
-  <button class="btn secondary" onclick="openAdmin()">🔐 Admin Panel</button>
-  <button class="btn secondary" onclick="openChat()">🖊 Digital Board</button>
-</div>
+  <label>उत्तर / विवरण</label>
+  <textarea id="a" class="big"></textarea>
 
-<div class="footer">
-  Blueprint Locked • Index will never change again
-</div>
+  <div class="actions">
+    <button onclick="saveItem()">💾 Save</button>
+    <button class="secondary" onclick="cancelEdit()">❌ Cancel</button>
+  </div>
+</section>
+
+<section class="panel list-panel">
+  <h3>📚 सेव ज्ञान</h3>
+  <div id="list"></div>
+</section>
 
 </main>
 
-<!-- ================= VOICE (Phase-2 will replace this) ================= -->
-  <script src="voice/stt.js"></script>
-<script src="voice/tts.js"></script>
-
-
-<!-- ================= CORE (Future) ================= -->
+<!-- 🔥 सबसे जरूरी तार -->
+<!-- CORE -->
+<script src="core/KnowledgeStore.js"></script>
 <script src="core/ThinkingEngine.js"></script>
 <script src="core/PresentationEngine.js"></script>
 
+<!-- VOICE -->
+<script src="voice/tts.js"></script>
+<script src="voice/stt.js"></script>
+
 <script>
-/* ================= TEMP TTS ================= */
-function ttsTest(){
-  if(!("speechSynthesis" in window)){
-    statusBox.innerText = "❌ आपका ब्राउज़र आवाज़ सपोर्ट नहीं करता";
+let editId = null;
+
+function goIndex(){
+  location.href = "index.html";
+}
+
+/* ===============================
+   CRUD via KnowledgeStore
+   =============================== */
+
+function saveItem(){
+  const question = q.value.trim();
+  const answer = a.value.trim();
+
+  if(!question || !answer){
+    alert("दोनों फील्ड आवश्यक हैं");
     return;
   }
 
-  const text = "नमस्ते! मैं अंजली मैम हूँ। मेरी आवाज़ सही काम कर रही है।";
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "hi-IN";
-  u.rate = 0.8;
-  u.pitch = 1.05;
+  if(editId){
+    KnowledgeStore.update(editId, question, answer);
+  } else {
+    KnowledgeStore.add(question, answer);
+  }
 
-  // लिखित बोर्ड पर भी दिखे
-  tempBoard.value = text;
-
-  statusBox.innerText = "🎤 बोल रही हूँ...";
-  speechSynthesis.speak(u);
-
-  u.onend = () => {
-    statusBox.innerText = "✅ TTS PASS — अगला चरण बनाया जा सकता है";
-  };
+  resetForm();
+  render();
 }
 
-/* ================= NAV (Future ready) ================= */
-function openAdmin(){
-  location.href = "admin.html";
+function editItem(id){
+  const item = KnowledgeStore.all().find(x=>x.id===id);
+  if(!item) return;
+  editId = id;
+  q.value = item.q;
+  a.value = item.a;
+  formTitle.innerText = "✏️ ज्ञान संशोधित करें";
 }
-function openChat(){
-  location.href = "anjali_chat.html";
+
+function deleteItem(id){
+  if(!confirm("हटाना चाहते हैं?")) return;
+  KnowledgeStore.remove(id);
+  render();
 }
+
+function cancelEdit(){
+  resetForm();
+}
+
+function resetForm(){
+  q.value="";
+  a.value="";
+  editId=null;
+  formTitle.innerText="➕ नया ज्ञान जोड़ें";
+}
+
+function render(){
+  const data = KnowledgeStore.all();
+  list.innerHTML="";
+  data.forEach(item=>{
+    const d=document.createElement("div");
+    d.className="item";
+    d.innerHTML=`
+      <b>${item.q}</b>
+      <small>${item.a}</small>
+      <div class="item-actions">
+        <button class="edit" onclick="editItem('${item.id}')">Edit</button>
+        <button class="delete" onclick="deleteItem('${item.id}')">Delete</button>
+      </div>
+    `;
+    list.appendChild(d);
+  });
+}
+
+render();
 </script>
 
 </body>
