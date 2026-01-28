@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel • अंजली मैम</title>
+
+<style>
+body{
+  margin:0;
+  font-family:"Noto Sans Devanagari", system-ui, sans-serif;
+  background:#f4f6f8;
+}
+header{
+  background:#1f2937;
+  color:#fff;
+  padding:12px 16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header button{
+  border:none;
+  border-radius:10px;
+  padding:8px 14px;
+  background:#2563eb;
+  color:#fff;
+  cursor:pointer;
+}
+main{
+  padding:16px;
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+}
+.panel{
+  background:#fff;
+  border-radius:14px;
+  padding:14px;
+  box-shadow:0 6px 18px rgba(0,0,0,.1);
+}
+.form-panel{
+  flex:1;
+  min-width:280px;
+  max-width:520px;
+}
+.list-panel{
+  flex:1;
+  min-width:260px;
+  max-width:420px;
+  max-height:75vh;
+  overflow:auto;
+}
+label{
+  font-weight:bold;
+  display:block;
+  margin-top:10px;
+}
+textarea{
+  width:100%;
+  min-height:70px;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #ccc;
+  font-size:14px;
+}
+.big{ min-height:120px; }
+.actions{
+  margin-top:10px;
+  display:flex;
+  gap:8px;
+}
+.actions button{
+  border:none;
+  border-radius:10px;
+  padding:8px 14px;
+  cursor:pointer;
+  background:#16a34a;
+  color:#fff;
+}
+.actions .secondary{ background:#64748b; }
+.item{
+  border-bottom:1px solid #eee;
+  padding:8px 0;
+}
+.item b{ display:block; }
+.item-actions button{
+  border:none;
+  border-radius:6px;
+  padding:4px 8px;
+  font-size:12px;
+  margin-right:4px;
+  cursor:pointer;
+}
+.edit{ background:#2563eb; color:#fff; }
+.delete{ background:#dc2626; color:#fff; }
+</style>
+</head>
+
+<body>
+
+<header>
+  <div>🔐 Admin Panel • अंजली मैम</div>
+  <button onclick="goIndex()">⬅ Index</button>
+</header>
+
+<main>
+
+<section class="panel form-panel">
+  <h2 id="formTitle">➕ नया ज्ञान जोड़ें</h2>
+
+  <label>प्रश्न / विषय</label>
+  <textarea id="q"></textarea>
+
+  <label>उत्तर / विवरण</label>
+  <textarea id="a" class="big"></textarea>
+
+  <div class="actions">
+    <button onclick="saveItem()">💾 Save</button>
+    <button class="secondary" onclick="cancelEdit()">❌ Cancel</button>
+  </div>
+</section>
+
+<section class="panel list-panel">
+  <h3>📚 सेव ज्ञान</h3>
+  <div id="list"></div>
+</section>
+
+</main>
+
+<script>
+/* ===============================
+   KnowledgeStore (Pure)
+   =============================== */
+
+const STORE_KEY = "ANJALI_KNOWLEDGE_STORE";
+let data = JSON.parse(localStorage.getItem(STORE_KEY)) || [];
+let editId = null;
+
+function goIndex(){
+  location.href = "index.html";
+}
+
+/* ===============================
+   CRUD
+   =============================== */
+
+function saveItem(){
+  const question = q.value.trim();
+  const answer = a.value.trim();
+
+  if(!question || !answer){
+    alert("दोनों फील्ड आवश्यक हैं");
+    return;
+  }
+
+  if(editId){
+    const item = data.find(x=>x.id===editId);
+    item.q = question;
+    item.a = answer;
+  } else {
+    data.push({
+      id: Date.now().toString(),
+      q: question,
+      a: answer
+    });
+  }
+
+  persist();
+  resetForm();
+  render();
+}
+
+function editItem(id){
+  const item = data.find(x=>x.id===id);
+  if(!item) return;
+  editId = id;
+  q.value = item.q;
+  a.value = item.a;
+  formTitle.innerText = "✏️ ज्ञान संशोधित करें";
+}
+
+function deleteItem(id){
+  if(!confirm("हटाना चाहते हैं?")) return;
+  data = data.filter(x=>x.id!==id);
+  persist();
+  render();
+}
+
+function cancelEdit(){
+  resetForm();
+}
+
+function resetForm(){
+  q.value="";
+  a.value="";
+  editId=null;
+  formTitle.innerText="➕ नया ज्ञान जोड़ें";
+}
+
+function persist(){
+  localStorage.setItem(STORE_KEY, JSON.stringify(data));
+}
+
+function render(){
+  list.innerHTML="";
+  data.forEach(item=>{
+    const d=document.createElement("div");
+    d.className="item";
+    d.innerHTML=`
+      <b>${item.q}</b>
+      <small>${item.a}</small>
+      <div class="item-actions">
+        <button class="edit" onclick="editItem('${item.id}')">Edit</button>
+        <button class="delete" onclick="deleteItem('${item.id}')">Delete</button>
+      </div>
+    `;
+    list.appendChild(d);
+  });
+}
+
+render();
+</script>
+
+</body>
+  </html>
