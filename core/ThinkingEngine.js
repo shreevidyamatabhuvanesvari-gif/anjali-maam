@@ -1,51 +1,36 @@
 /* ======================================================
-   core/ThinkingEngine.js — UNIVERSAL TEACHER BRAIN
-   PURPOSE:
-   - Intent-based understanding
-   - Topic disambiguation
-   - Follow-up support
-   - No wrong answer repetition
-   - Admin compatible
+   core/ThinkingEngine.js — UNIVERSAL TEACHER BRAIN (V2)
+   NOW CONNECTED WITH KnowledgeStore
    ====================================================== */
 
 (function (global) {
   "use strict";
 
-  const STORAGE_KEY = "ANJALI_THINKING_MEMORY_V1";
+  const STORAGE_KEY = "ANJALI_THINKING_MEMORY_V2";
 
-  /* ===============================
-     MEMORY STRUCTURE
-     =============================== */
   const Memory = {
-    concepts: [
-      // {
-      //   id,
-      //   topic,      // "भारत संविधान"
-      //   intent,     // "TIME" | "PERSON" | "DEFINITION"
-      //   signals[],  // keywords
-      //   answer
-      // }
-    ],
-    lastContext: null // { topic, intent }
+    concepts: [],
+    lastContext: null
   };
 
   /* ===============================
-     LOAD / SAVE
+     LOAD / SAVE (internal stats only)
      =============================== */
   function load() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed.concepts))
-        Memory.concepts = parsed.concepts;
       if (parsed.lastContext)
         Memory.lastContext = parsed.lastContext;
     } catch {}
   }
 
   function save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(Memory));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ lastContext: Memory.lastContext })
+    );
   }
 
   load();
@@ -82,16 +67,38 @@
       .filter(w => w.length > 1 && !WEAK_WORDS.has(w));
   }
 
-  /* ===============================
-     TOPIC EXTRACTION
-     =============================== */
   function extractTopic(tokens) {
-    // core topic = longest meaningful phrase
     return tokens.join(" ");
   }
 
   /* ===============================
-     MATCHING LOGIC
+     🔑 CRITICAL: SYNC FROM KnowledgeStore
+     =============================== */
+  function syncFromKnowledgeStore() {
+    if (!global.KnowledgeStore) return;
+
+    const data = KnowledgeStore.all();
+    Memory.concepts = data.map(item => {
+      const clean = normalize(item.q);
+      const intent = detectIntent(clean);
+      const tokens = tokenize(clean);
+      const topic = extractTopic(tokens);
+
+      return {
+        id: item.id,
+        topic,
+        intent,
+        signals: tokens,
+        answer: item.a
+      };
+    });
+  }
+
+  // हर load पर sync
+  syncFromKnowledgeStore();
+
+  /* ===============================
+     MATCHING
      =============================== */
   function matchScore(tokens, concept) {
     let score = 0;
@@ -120,44 +127,12 @@
   }
 
   /* ===============================
-     LEARNING (ADMIN BRIDGE)
-     =============================== */
-  function addConcept(id, signals, responder) {
-    if (!Array.isArray(signals) || typeof responder !== "function") return;
-
-    const text = signals.join(" ");
-    const clean = normalize(text);
-    const intent = detectIntent(clean);
-    const tokens = tokenize(clean);
-    const topic = extractTopic(tokens);
-    const answer = String(responder());
-
-    // overwrite only same topic + same intent
-    const existing = Memory.concepts.find(
-      c => c.topic === topic && c.intent === intent
-    );
-
-    if (existing) {
-      existing.answer = answer;
-      save();
-      return;
-    }
-
-    Memory.concepts.push({
-      id,
-      topic,
-      intent,
-      signals: tokens,
-      answer
-    });
-
-    save();
-  }
-
-  /* ===============================
      THINK (MAIN BRAIN)
      =============================== */
   function think(input) {
+    // हर प्रश्न पर fresh sync (real brain)
+    syncFromKnowledgeStore();
+
     const clean = normalize(input);
     const intent = detectIntent(clean);
     const tokens = tokenize(clean);
@@ -168,10 +143,9 @@
 
     const topic = extractTopic(tokens);
 
-    // 1. Exact topic + intent
     let concept = findBestConcept(topic, intent, tokens);
 
-    // 2. Follow-up (same intent, previous topic)
+    // follow-up
     if (!concept && Memory.lastContext) {
       if (Memory.lastContext.intent === intent) {
         concept = findBestConcept(
@@ -191,7 +165,6 @@
       return { text: concept.answer };
     }
 
-    // no guessing allowed
     Memory.lastContext = null;
     save();
     return {
@@ -205,7 +178,6 @@
      =============================== */
   global.ThinkingEngine = {
     think,
-    addConcept,
     inspect: () => JSON.parse(JSON.stringify(Memory))
   };
 
