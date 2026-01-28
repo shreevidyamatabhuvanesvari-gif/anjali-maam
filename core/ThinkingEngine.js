@@ -1,27 +1,24 @@
 /* ======================================================
-   core/ThinkingEngine.js — REAL BRAIN (KnowledgeStore Connected)
+   core/ThinkingEngine.js — REAL WORKING BRAIN
    PURPOSE:
-   - KnowledgeStore से सीधे ज्ञान पढ़ना
-   - User प्रश्न से best match निकालना
-   - कोई guessing नहीं
-   - कोई duplicate memory नहीं
+   - KnowledgeStore से ज्ञान लेना
+   - प्रश्न से match करना
+   - सही उत्तर देना
    ====================================================== */
 
 (function (global) {
   "use strict";
 
   if (!global.KnowledgeStore) {
-    console.error("❌ KnowledgeStore not loaded");
+    console.error("❌ KnowledgeStore not found");
     return;
   }
 
   /* ===============================
      NORMALIZATION
      =============================== */
-
   const WEAK_WORDS = new Set([
-    "का","की","के","को","से","में","पर",
-    "है","था","थे","और","क्या","कौन","कब","कैसे"
+    "का","की","के","को","से","में","पर","था","थे","है","और"
   ]);
 
   function normalize(text) {
@@ -39,45 +36,43 @@
   }
 
   /* ===============================
-     MATCHING LOGIC
+     CORE MATCH LOGIC
      =============================== */
-
-  function scoreMatch(userTokens, questionTokens) {
-    let score = 0;
-    for (const w of questionTokens) {
-      if (userTokens.includes(w)) score++;
+  function similarity(tokensA, tokensB) {
+    let match = 0;
+    for (const t of tokensA) {
+      if (tokensB.includes(t)) match++;
     }
-    return score;
+    return match;
   }
 
   /* ===============================
-     MAIN THINK FUNCTION
+     THINK FUNCTION
      =============================== */
-
-  function think(userInput) {
-    const userTokens = tokenize(userInput);
+  function think(input) {
+    const userTokens = tokenize(input);
     if (!userTokens.length) {
       return { text: "मुझे प्रश्न स्पष्ट नहीं मिला।" };
     }
 
-    const knowledge = KnowledgeStore.all(); // 🔑 असली दिमाग यहाँ है
+    const knowledge = KnowledgeStore.all(); // 🔥 यही असली missing link था
 
-    let bestItem = null;
+    let best = null;
     let bestScore = 0;
 
     for (const item of knowledge) {
       const qTokens = tokenize(item.q);
-      const score = scoreMatch(userTokens, qTokens);
+      const score = similarity(userTokens, qTokens);
 
       if (score > bestScore) {
         bestScore = score;
-        bestItem = item;
+        best = item;
       }
     }
 
-    // Minimum threshold: कम से कम 2 शब्द match
-    if (bestItem && bestScore >= 2) {
-      return { text: bestItem.a };
+    // न्यूनतम 2 शब्द match होने चाहिए
+    if (best && bestScore >= 2) {
+      return { text: best.a };
     }
 
     return {
@@ -89,7 +84,6 @@
   /* ===============================
      EXPORT
      =============================== */
-
   global.ThinkingEngine = {
     think
   };
