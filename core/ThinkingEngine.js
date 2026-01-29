@@ -24,7 +24,7 @@
   function normalize(text) {
     return text
       .toLowerCase()
-      .replace(/[^\u0900-\u097F\s]/g, "")
+      .replace(/[^\u0900-\u097Fa-zA-Z0-9\s]/g, "")
       .replace(/\s+/g, " ")
       .trim();
   }
