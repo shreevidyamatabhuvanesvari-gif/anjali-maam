@@ -6,23 +6,60 @@
 <title>अंजली मैम • Digital Board</title>
 
 <style>
-body{margin:0;font-family:system-ui;background:#fdf4ec}
-.chat{padding:16px}
-.msg{margin:6px 0;padding:8px;border-radius:8px}
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#fdf4ec;
+}
+.chat{
+  padding:16px;
+  max-height:70vh;
+  overflow-y:auto;
+}
+.msg{
+  margin:6px 0;
+  padding:8px 10px;
+  border-radius:8px;
+  white-space:pre-line;
+}
 .user{background:#fff1e6}
 .anjali{background:#f7fbff}
 .system{color:#777;font-size:12px}
-button{padding:10px 14px;border-radius:10px;border:none;background:#c96a6a;color:#fff}
+
+.controls{
+  padding:10px;
+  display:flex;
+  gap:6px;
+}
+input{
+  flex:1;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  font-size:14px;
+}
+button{
+  padding:10px 14px;
+  border-radius:10px;
+  border:none;
+  background:#c96a6a;
+  color:#fff;
+  cursor:pointer;
+}
 </style>
 </head>
 
 <body>
 
 <div class="chat" id="chatBox">
-  <div class="system">🎤 बोलें दबाइए</div>
+  <div class="system">🎤 बोलें या नीचे लिखें</div>
 </div>
 
-<button id="listenBtn">🎤 बोलें</button>
+<div class="controls">
+  <input id="textInput" placeholder="यहाँ प्रश्न लिखें..." />
+  <button id="askBtn">उत्तर प्राप्त करें</button>
+  <button id="listenBtn">🎤 बोलें</button>
+</div>
 
 <!-- MEMORY -->
 <script src="core/KnowledgeStore.js"></script>
@@ -40,6 +77,8 @@ button{padding:10px 14px;border-radius:10px;border:none;background:#c96a6a;color
 <script>
 const chatBox = document.getElementById("chatBox");
 const listenBtn = document.getElementById("listenBtn");
+const askBtn = document.getElementById("askBtn");
+const textInput = document.getElementById("textInput");
 
 function addMsg(text, who){
   const d = document.createElement("div");
@@ -49,6 +88,32 @@ function addMsg(text, who){
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+/* ===== CORE ASK FUNCTION (Voice + Text दोनों के लिए) ===== */
+function handleQuestion(userText){
+  if(!userText) return;
+
+  addMsg(userText, "user");
+
+  const result = ThinkingEngine.think(userText);
+  const finalText = PresentationEngine.present(result.text, userText);
+
+  // ✍️ बोर्ड पर लिखना
+  addMsg(finalText, "anjali");
+
+  // 🎤 वही टेक्स्ट बोलना
+  if (window.AnjaliTTS) {
+    AnjaliTTS.speak(finalText);
+  }
+}
+
+/* ===== TEXT MODE ===== */
+askBtn.onclick = () => {
+  const text = textInput.value.trim();
+  textInput.value = "";
+  handleQuestion(text);
+};
+
+/* ===== VOICE MODE ===== */
 listenBtn.onclick = () => {
 
   if (!window.AnjaliSTT || !AnjaliSTT.available) {
@@ -56,20 +121,10 @@ listenBtn.onclick = () => {
     return;
   }
 
-  // 🔑 Mic unlock
   AnjaliSTT.unlock();
 
-  // 🔥 यही असली connection है
   AnjaliSTT.onText = function(userText){
-    addMsg(userText, "user");
-
-    const result = ThinkingEngine.think(userText);
-const finalText = PresentationEngine.present(result.text, userText);
-addMsg(finalText, "anjali");
-
-    if (window.AnjaliTTS) {
-      AnjaliTTS.speak(result.text);
-    }
+    handleQuestion(userText);
   };
 
   addMsg("🎤 सुन रही हूँ…", "system");
