@@ -1,32 +1,46 @@
 /* ======================================================
-   core/PresentationEngine.js — TEACHER INTELLIGENCE V3
+   core/PresentationEngine.js — REAL TEACHER INTELLIGENCE
    PURPOSE:
-   - प्रश्न का intent पहचानना (Hindi + English)
+   - हिंदी/English semantic intent पहचानना
    - जितना पूछा जाए उतना ही पढ़ाना
-   - Controlled explanation
-   - Digital board जैसा structured output
+   - Digital Board के लिए सही format
    ====================================================== */
 
 (function (global) {
   "use strict";
 
   /* ===============================
-     QUESTION INTENT DETECTOR
+     SEMANTIC INTENT DICTIONARY
+     =============================== */
+  const HINDI_INTENT_MAP = {
+    DEFINITION: [
+      "क्या", "परिभाषा", "अर्थ", "मतलब", "कहते हैं"
+    ],
+    EXPLANATION: [
+      "समझाइए", "वर्णन", "व्याख्या", "स्पष्ट करें", "बताइए"
+    ],
+    ANALYSIS: [
+      "गुण और दोष", "विश्लेषण", "तुलना", "आलोचना"
+    ],
+    FACT: [
+      "कौन", "कब", "कहाँ", "किसने", "कितना", "when", "where", "who"
+    ]
+  };
+
+  /* ===============================
+     INTENT DETECTOR (SEMANTIC)
      =============================== */
   function detectIntent(question) {
+    if (!question) return "GENERAL";
     question = question.toLowerCase();
 
-    if (/क्या|kya|परिभाषा|definition/.test(question)) 
-      return "DEFINITION";
-
-    if (/समझाइए|samjhaiye|व्याख्या|explain/.test(question)) 
-      return "EXPLANATION";
-
-    if (/गुण और दोष|analysis|विश्लेषण/.test(question)) 
-      return "ANALYSIS";
-
-    if (/कौन|who|कब|kab|when|where|कहाँ/.test(question)) 
-      return "FACT";
+    for (const intent in HINDI_INTENT_MAP) {
+      for (const word of HINDI_INTENT_MAP[intent]) {
+        if (question.includes(word)) {
+          return intent;
+        }
+      }
+    }
 
     return "GENERAL";
   }
@@ -41,18 +55,16 @@
 
     const intent = detectIntent(questionText);
 
-    // पूरे उत्तर को वाक्यों में तोड़ो
+    // वाक्यों में तोड़ना
     const sentences = answerText
       .split("।")
       .map(s => s.trim())
       .filter(Boolean);
 
     let mainAnswer = "";
-    let simpleExplain = "";
-    let conclusion = "";
 
     /* ===============================
-       TEACHING LOGIC (Length Control)
+       TEACHER CONTROL LOGIC
        =============================== */
 
     if (intent === "FACT") {
@@ -62,34 +74,35 @@
 
     else if (intent === "DEFINITION") {
       // 2–3 लाइन
-      mainAnswer = sentences.slice(0, 2).join("।") + "।";
+      mainAnswer = sentences.slice(0, 3).join("।") + "।";
     }
 
     else if (intent === "EXPLANATION") {
-      // 4–5 लाइन
-      mainAnswer = sentences.slice(0, 4).join("।") + "।";
+      // मध्यम व्याख्या
+      mainAnswer = sentences.slice(0, 5).join("।") + "।";
     }
 
     else if (intent === "ANALYSIS") {
       // पूरा लेख
-      mainAnswer = sentences.join("।") + "।";
+      mainAnswer = answerText;
     }
 
     else {
       // GENERAL
-      mainAnswer = sentences.slice(0, 3).join("।") + "।";
+      mainAnswer = sentences.slice(0, 4).join("।") + "।";
     }
 
     /* ===============================
        CONTROLLED SIMPLE EXPLANATION
        =============================== */
-    simpleExplain =
+    let simpleExplain =
       sentences.slice(0, 2).join("।") + "।";
 
     /* ===============================
-       CONCLUSION (अगर उत्तर लंबा है)
+       CONCLUSION (अगर लंबा हो)
        =============================== */
-    if (sentences.length > 5) {
+    let conclusion = "";
+    if (sentences.length > 6) {
       conclusion = sentences[sentences.length - 1] + "।";
     }
 
@@ -112,7 +125,8 @@
      EXPORT
      =============================== */
   global.PresentationEngine = {
-    present
+    present,
+    detectIntent   // debugging/inspection के लिए
   };
 
 })(window);
