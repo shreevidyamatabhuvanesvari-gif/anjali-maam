@@ -15,7 +15,7 @@ body{
   height:100vh;
 }
 
-/* Top Question Area */
+/* Top Panel */
 .top{
   padding:10px;
   background:#fff7f2;
@@ -43,29 +43,25 @@ button{
   cursor:pointer;
 }
 
-/* Digital Board */
+/* Board */
 .chat{
   flex:1;
   padding:16px;
   overflow-y:auto;
 }
 .msg{
-  margin:6px 0;
-  padding:8px 10px;
+  margin:8px 0;
+  padding:10px;
   border-radius:8px;
   white-space:pre-wrap;
-  line-height:1.7;
 }
 .user{background:#fff1e6}
 .anjali{background:#f7fbff}
 .system{color:#777;font-size:12px}
 
-/* Highlight */
 .highlight{
-  background:#ffe08a;
-  color:#000;
-  border-radius:4px;
-  padding:0 2px;
+  background:yellow;
+  font-weight:bold;
 }
 </style>
 </head>
@@ -102,56 +98,61 @@ const listenBtn = document.getElementById("listenBtn");
 const askBtn = document.getElementById("askBtn");
 const textInput = document.getElementById("textInput");
 
+/* Add message block */
 function addMsg(text, who){
   const d = document.createElement("div");
   d.className = "msg " + who;
-  d.textContent = text;
+  d.textContent = text || "";
   chatBox.appendChild(d);
   chatBox.scrollTop = chatBox.scrollHeight;
   return d;
 }
 
-/* ===============================
-   TRUE TEACHER SYNC
-   =============================== */
-function speakAndWrite(text){
-  const anjaliBox = document.createElement("div");
-  anjaliBox.className = "msg anjali";
-  chatBox.appendChild(anjaliBox);
+/* Split answer into teaching sections */
+function splitIntoSections(text){
+  return text
+    .split(/\n+/)
+    .map(t => t.trim())
+    .filter(t => t.length > 0);
+}
 
-  let spans = [];
-  let currentIndex = -1;
-
-  function onWord(word){
-    // पिछला highlight हटाओ
-    if(spans[currentIndex]){
-      spans[currentIndex].classList.remove("highlight");
-    }
-
-    // नया शब्द जोड़ो
-    const span = document.createElement("span");
-    span.textContent = word + " ";
-    span.className = "highlight";
-    anjaliBox.appendChild(span);
-
-    spans.push(span);
-    currentIndex++;
-
-    // scroll
-    span.scrollIntoView({
-      behavior:"smooth",
-      block:"center"
-    });
-  }
-
-  if(window.AnjaliTTS){
-    AnjaliTTS.speak(text, onWord);
+/* Teacher style write + speak */
+async function teachSections(sections){
+  for(const section of sections){
+    const box = addMsg("", "anjali");
+    await speakAndWrite(section, box);
   }
 }
 
-/* ===============================
-   CORE LOGIC
-   =============================== */
+/* बोलते हुए लिखना (word sync + flush safe) */
+function speakAndWrite(text, element){
+  return new Promise(resolve=>{
+    const words = text.split(/\s+/);
+    let i = 0;
+
+    element.textContent = "";
+
+    AnjaliTTS.speak(text, (word)=>{
+      if(i < words.length){
+        element.innerHTML =
+          words.slice(0,i).join(" ") +
+          " <span class='highlight'>" +
+          words[i] +
+          "</span>";
+        i++;
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    });
+
+    /* 🔒 Flush: TTS खत्म होते ही सब लिख दो */
+    setTimeout(()=>{
+      element.textContent = text;
+      resolve();
+    }, (words.length * 500) / 0.78);
+  });
+}
+
+/* Main handler */
 function handleQuestion(userText){
   if(!userText) return;
 
@@ -160,26 +161,25 @@ function handleQuestion(userText){
   const result = ThinkingEngine.think(userText);
   const finalText = PresentationEngine.present(result.text, userText);
 
-  speakAndWrite(finalText);
+  const sections = splitIntoSections(finalText);
+  teachSections(sections);
 }
 
-/* TEXT MODE */
+/* Text mode */
 askBtn.onclick = () => {
   const text = textInput.value.trim();
   textInput.value = "";
   handleQuestion(text);
 };
 
-/* VOICE MODE */
+/* Voice mode */
 listenBtn.onclick = () => {
-
   if (!window.AnjaliSTT || !AnjaliSTT.available) {
     addMsg("❌ Mic उपलब्ध नहीं", "system");
     return;
   }
 
   AnjaliSTT.unlock();
-
   AnjaliSTT.onText = function(userText){
     handleQuestion(userText);
   };
