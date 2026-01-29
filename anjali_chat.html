@@ -63,13 +63,10 @@ button{
 
 <!-- MEMORY -->
 <script src="core/KnowledgeStore.js"></script>
-
 <!-- BRAIN -->
 <script src="core/ThinkingEngine.js"></script>
-
 <!-- TEACHER -->
 <script src="core/PresentationEngine.js"></script>
-
 <!-- VOICE -->
 <script src="voice/tts.js"></script>
 <script src="voice/stt.js"></script>
@@ -86,9 +83,22 @@ function addMsg(text, who){
   d.innerText = text;
   chatBox.appendChild(d);
   chatBox.scrollTop = chatBox.scrollHeight;
+  return d;
 }
 
-/* ===== CORE ASK FUNCTION (Voice + Text दोनों के लिए) ===== */
+/* ✍️ TYPEWRITER EFFECT */
+function typeWriter(element, text, speed=40){
+  element.innerText = "";
+  let i = 0;
+  const timer = setInterval(()=>{
+    element.innerText += text[i];
+    i++;
+    chatBox.scrollTop = chatBox.scrollHeight;
+    if(i >= text.length) clearInterval(timer);
+  }, speed);
+}
+
+/* CORE */
 function handleQuestion(userText){
   if(!userText) return;
 
@@ -97,23 +107,26 @@ function handleQuestion(userText){
   const result = ThinkingEngine.think(userText);
   const finalText = PresentationEngine.present(result.text, userText);
 
-  // ✍️ बोर्ड पर लिखना
-  addMsg(finalText, "anjali");
+  // खाली बॉक्स
+  const anjaliBox = addMsg("", "anjali");
 
-  // 🎤 वही टेक्स्ट बोलना
+  // ✍️ लिखते हुए दिखाना
+  typeWriter(anjaliBox, finalText, 35);
+
+  // 🎤 उसी समय बोलना
   if (window.AnjaliTTS) {
     AnjaliTTS.speak(finalText);
   }
 }
 
-/* ===== TEXT MODE ===== */
+/* TEXT MODE */
 askBtn.onclick = () => {
   const text = textInput.value.trim();
   textInput.value = "";
   handleQuestion(text);
 };
 
-/* ===== VOICE MODE ===== */
+/* VOICE MODE */
 listenBtn.onclick = () => {
 
   if (!window.AnjaliSTT || !AnjaliSTT.available) {
