@@ -54,13 +54,13 @@ button{
   padding:8px 10px;
   border-radius:8px;
   white-space:pre-wrap;
-  line-height:1.6;
+  line-height:1.7;
 }
 .user{background:#fff1e6}
 .anjali{background:#f7fbff}
 .system{color:#777;font-size:12px}
 
-/* 🔥 Highlight word */
+/* Highlight */
 .highlight{
   background:#ffe08a;
   color:#000;
@@ -102,7 +102,6 @@ const listenBtn = document.getElementById("listenBtn");
 const askBtn = document.getElementById("askBtn");
 const textInput = document.getElementById("textInput");
 
-/* Message add */
 function addMsg(text, who){
   const d = document.createElement("div");
   d.className = "msg " + who;
@@ -113,35 +112,40 @@ function addMsg(text, who){
 }
 
 /* ===============================
-   TEACHER SYNC CORE
+   TRUE TEACHER SYNC
    =============================== */
-function speakWithHighlight(text){
-  const words = text.split(/\s+/);
+function speakAndWrite(text){
   const anjaliBox = document.createElement("div");
   anjaliBox.className = "msg anjali";
   chatBox.appendChild(anjaliBox);
 
-  // पहले पूरा टेक्स्ट span में बनाओ
-  anjaliBox.innerHTML = words.map(w=>`<span>${w}</span>`).join(" ");
-  const spans = anjaliBox.querySelectorAll("span");
+  let spans = [];
+  let currentIndex = -1;
 
-  chatBox.scrollTop = chatBox.scrollHeight;
+  function onWord(word){
+    // पिछला highlight हटाओ
+    if(spans[currentIndex]){
+      spans[currentIndex].classList.remove("highlight");
+    }
 
-  // TTS with word callback
-  if (window.AnjaliTTS) {
-    AnjaliTTS.speak(text, function(word, index){
-      // सब reset
-      spans.forEach(s=>s.classList.remove("highlight"));
+    // नया शब्द जोड़ो
+    const span = document.createElement("span");
+    span.textContent = word + " ";
+    span.className = "highlight";
+    anjaliBox.appendChild(span);
 
-      // current highlight
-      if(spans[index]){
-        spans[index].classList.add("highlight");
-        spans[index].scrollIntoView({
-          behavior:"smooth",
-          block:"center"
-        });
-      }
+    spans.push(span);
+    currentIndex++;
+
+    // scroll
+    span.scrollIntoView({
+      behavior:"smooth",
+      block:"center"
     });
+  }
+
+  if(window.AnjaliTTS){
+    AnjaliTTS.speak(text, onWord);
   }
 }
 
@@ -156,7 +160,7 @@ function handleQuestion(userText){
   const result = ThinkingEngine.think(userText);
   const finalText = PresentationEngine.present(result.text, userText);
 
-  speakWithHighlight(finalText);
+  speakAndWrite(finalText);
 }
 
 /* TEXT MODE */
