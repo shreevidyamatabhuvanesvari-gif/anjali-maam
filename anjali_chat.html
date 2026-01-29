@@ -10,55 +10,71 @@ body{
   margin:0;
   font-family:system-ui;
   background:#fdf4ec;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
 }
-.chat{
-  padding:16px;
-  max-height:70vh;
-  overflow-y:auto;
-}
-.msg{
-  margin:6px 0;
-  padding:8px 10px;
-  border-radius:8px;
-  white-space:pre-line;
-}
-.user{background:#fff1e6}
-.anjali{background:#f7fbff}
-.system{color:#777;font-size:12px}
 
-.controls{
+/* Top Question Area */
+.top{
   padding:10px;
+  background:#fff7f2;
+  border-bottom:1px solid #e6b2b2;
+}
+input{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #ccc;
+  font-size:14px;
+  margin-bottom:8px;
+}
+.controls{
   display:flex;
   gap:6px;
 }
-input{
+button{
   flex:1;
   padding:10px;
-  border-radius:8px;
-  border:1px solid #ccc;
-  font-size:14px;
-}
-button{
-  padding:10px 14px;
   border-radius:10px;
   border:none;
   background:#c96a6a;
   color:#fff;
   cursor:pointer;
 }
+
+/* Chat Board */
+.chat{
+  flex:1;
+  padding:16px;
+  overflow-y:auto;
+}
+.msg{
+  margin:6px 0;
+  padding:8px 10px;
+  border-radius:8px;
+  white-space:pre-wrap;   /* 🔑 यही सबसे जरूरी लाइन है */
+}
+.user{background:#fff1e6}
+.anjali{background:#f7fbff}
+.system{color:#777;font-size:12px}
 </style>
 </head>
 
 <body>
 
-<div class="chat" id="chatBox">
-  <div class="system">🎤 बोलें या नीचे लिखें</div>
+<!-- Question Panel (TOP) -->
+<div class="top">
+  <input id="textInput" placeholder="यहाँ प्रश्न लिखें..." />
+  <div class="controls">
+    <button id="askBtn">उत्तर प्राप्त करें</button>
+    <button id="listenBtn">🎤 बोलें</button>
+  </div>
 </div>
 
-<div class="controls">
-  <input id="textInput" placeholder="यहाँ प्रश्न लिखें..." />
-  <button id="askBtn">उत्तर प्राप्त करें</button>
-  <button id="listenBtn">🎤 बोलें</button>
+<!-- Digital Board -->
+<div class="chat" id="chatBox">
+  <div class="system">🎤 बोलें या ऊपर लिखें</div>
 </div>
 
 <!-- MEMORY -->
@@ -80,25 +96,25 @@ const textInput = document.getElementById("textInput");
 function addMsg(text, who){
   const d = document.createElement("div");
   d.className = "msg " + who;
-  d.innerText = text;
+  d.textContent = text;   // 🔑 innerText नहीं, textContent
   chatBox.appendChild(d);
   chatBox.scrollTop = chatBox.scrollHeight;
   return d;
 }
 
-/* ✍️ TYPEWRITER EFFECT */
-function typeWriter(element, text, speed=40){
-  element.innerText = "";
+/* ✍️ सही Typewriter (space-safe) */
+function typeWriter(element, text, speed=35){
+  element.textContent = "";
   let i = 0;
   const timer = setInterval(()=>{
-    element.innerText += text[i];
+    element.textContent += text.charAt(i);
     i++;
     chatBox.scrollTop = chatBox.scrollHeight;
     if(i >= text.length) clearInterval(timer);
   }, speed);
 }
 
-/* CORE */
+/* CORE LOGIC */
 function handleQuestion(userText){
   if(!userText) return;
 
@@ -107,13 +123,12 @@ function handleQuestion(userText){
   const result = ThinkingEngine.think(userText);
   const finalText = PresentationEngine.present(result.text, userText);
 
-  // खाली बॉक्स
   const anjaliBox = addMsg("", "anjali");
 
-  // ✍️ लिखते हुए दिखाना
+  // ✍️ लिखते हुए
   typeWriter(anjaliBox, finalText, 35);
 
-  // 🎤 उसी समय बोलना
+  // 🎤 बोलते हुए
   if (window.AnjaliTTS) {
     AnjaliTTS.speak(finalText);
   }
