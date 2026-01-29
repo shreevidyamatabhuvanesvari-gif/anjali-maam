@@ -43,7 +43,7 @@ button{
   cursor:pointer;
 }
 
-/* Chat Board */
+/* Digital Board */
 .chat{
   flex:1;
   padding:16px;
@@ -53,17 +53,26 @@ button{
   margin:6px 0;
   padding:8px 10px;
   border-radius:8px;
-  white-space:pre-wrap;   /* 🔑 यही सबसे जरूरी लाइन है */
+  white-space:pre-wrap;
+  line-height:1.6;
 }
 .user{background:#fff1e6}
 .anjali{background:#f7fbff}
 .system{color:#777;font-size:12px}
+
+/* 🔥 Highlight word */
+.highlight{
+  background:#ffe08a;
+  color:#000;
+  border-radius:4px;
+  padding:0 2px;
+}
 </style>
 </head>
 
 <body>
 
-<!-- Question Panel (TOP) -->
+<!-- Question Panel -->
 <div class="top">
   <input id="textInput" placeholder="यहाँ प्रश्न लिखें..." />
   <div class="controls">
@@ -93,28 +102,52 @@ const listenBtn = document.getElementById("listenBtn");
 const askBtn = document.getElementById("askBtn");
 const textInput = document.getElementById("textInput");
 
+/* Message add */
 function addMsg(text, who){
   const d = document.createElement("div");
   d.className = "msg " + who;
-  d.textContent = text;   // 🔑 innerText नहीं, textContent
+  d.textContent = text;
   chatBox.appendChild(d);
   chatBox.scrollTop = chatBox.scrollHeight;
   return d;
 }
 
-/* ✍️ सही Typewriter (space-safe) */
-function typeWriter(element, text, speed=35){
-  element.textContent = "";
-  let i = 0;
-  const timer = setInterval(()=>{
-    element.textContent += text.charAt(i);
-    i++;
-    chatBox.scrollTop = chatBox.scrollHeight;
-    if(i >= text.length) clearInterval(timer);
-  }, speed);
+/* ===============================
+   TEACHER SYNC CORE
+   =============================== */
+function speakWithHighlight(text){
+  const words = text.split(/\s+/);
+  const anjaliBox = document.createElement("div");
+  anjaliBox.className = "msg anjali";
+  chatBox.appendChild(anjaliBox);
+
+  // पहले पूरा टेक्स्ट span में बनाओ
+  anjaliBox.innerHTML = words.map(w=>`<span>${w}</span>`).join(" ");
+  const spans = anjaliBox.querySelectorAll("span");
+
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  // TTS with word callback
+  if (window.AnjaliTTS) {
+    AnjaliTTS.speak(text, function(word, index){
+      // सब reset
+      spans.forEach(s=>s.classList.remove("highlight"));
+
+      // current highlight
+      if(spans[index]){
+        spans[index].classList.add("highlight");
+        spans[index].scrollIntoView({
+          behavior:"smooth",
+          block:"center"
+        });
+      }
+    });
+  }
 }
 
-/* CORE LOGIC */
+/* ===============================
+   CORE LOGIC
+   =============================== */
 function handleQuestion(userText){
   if(!userText) return;
 
@@ -123,15 +156,7 @@ function handleQuestion(userText){
   const result = ThinkingEngine.think(userText);
   const finalText = PresentationEngine.present(result.text, userText);
 
-  const anjaliBox = addMsg("", "anjali");
-
-  // ✍️ लिखते हुए
-  typeWriter(anjaliBox, finalText, 35);
-
-  // 🎤 बोलते हुए
-  if (window.AnjaliTTS) {
-    AnjaliTTS.speak(finalText);
-  }
+  speakWithHighlight(finalText);
 }
 
 /* TEXT MODE */
