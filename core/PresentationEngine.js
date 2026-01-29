@@ -1,9 +1,10 @@
 /* ======================================================
-   core/PresentationEngine.js — TEACHER INTELLIGENCE V2
+   core/PresentationEngine.js — TEACHER INTELLIGENCE V3
    PURPOSE:
+   - प्रश्न का intent पहचानना (Hindi + English)
    - जितना पूछा जाए उतना ही पढ़ाना
    - Controlled explanation
-   - Digital board format
+   - Digital board जैसा structured output
    ====================================================== */
 
 (function (global) {
@@ -13,10 +14,20 @@
      QUESTION INTENT DETECTOR
      =============================== */
   function detectIntent(question) {
-    if (/क्या है|परिभाषा/.test(question)) return "DEFINITION";
-    if (/समझाइए|व्याख्या/.test(question)) return "EXPLANATION";
-    if (/गुण और दोष|विश्लेषण/.test(question)) return "ANALYSIS";
-    if (/कौन|कब|कहाँ/.test(question)) return "FACT";
+    question = question.toLowerCase();
+
+    if (/क्या|kya|परिभाषा|definition/.test(question)) 
+      return "DEFINITION";
+
+    if (/समझाइए|samjhaiye|व्याख्या|explain/.test(question)) 
+      return "EXPLANATION";
+
+    if (/गुण और दोष|analysis|विश्लेषण/.test(question)) 
+      return "ANALYSIS";
+
+    if (/कौन|who|कब|kab|when|where|कहाँ/.test(question)) 
+      return "FACT";
+
     return "GENERAL";
   }
 
@@ -41,28 +52,31 @@
     let conclusion = "";
 
     /* ===============================
-       TEACHING LOGIC
+       TEACHING LOGIC (Length Control)
        =============================== */
 
     if (intent === "FACT") {
-      // सिर्फ पहला वाक्य
+      // सिर्फ 1 लाइन
       mainAnswer = sentences[0] + "।";
     }
 
     else if (intent === "DEFINITION") {
+      // 2–3 लाइन
       mainAnswer = sentences.slice(0, 2).join("।") + "।";
     }
 
     else if (intent === "EXPLANATION") {
+      // 4–5 लाइन
       mainAnswer = sentences.slice(0, 4).join("।") + "।";
     }
 
     else if (intent === "ANALYSIS") {
-      mainAnswer = sentences.slice(0, 6).join("।") + "।";
+      // पूरा लेख
+      mainAnswer = sentences.join("।") + "।";
     }
 
     else {
-      // default
+      // GENERAL
       mainAnswer = sentences.slice(0, 3).join("।") + "।";
     }
 
@@ -73,7 +87,7 @@
       sentences.slice(0, 2).join("।") + "।";
 
     /* ===============================
-       CONCLUSION (अगर लंबा उत्तर है)
+       CONCLUSION (अगर उत्तर लंबा है)
        =============================== */
     if (sentences.length > 5) {
       conclusion = sentences[sentences.length - 1] + "।";
