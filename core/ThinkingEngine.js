@@ -1,9 +1,9 @@
 /* ======================================================
-   core/ThinkingEngine.js — REAL WORKING BRAIN
+   core/ThinkingEngine.js — ARTICLE AWARE BRAIN
    PURPOSE:
-   - KnowledgeStore से ज्ञान लेना
-   - प्रश्न से match करना
-   - सही उत्तर देना
+   - KnowledgeStore से पूरा लेख लेना
+   - लेख के हर वाक्य से match करना
+   - सबसे relevant वाक्य से उत्तर बनाना
    ====================================================== */
 
 (function (global) {
@@ -36,7 +36,7 @@
   }
 
   /* ===============================
-     CORE MATCH LOGIC
+     SIMILARITY LOGIC
      =============================== */
   function similarity(tokensA, tokensB) {
     let match = 0;
@@ -47,7 +47,7 @@
   }
 
   /* ===============================
-     THINK FUNCTION
+     THINK FUNCTION (ARTICLE LEVEL)
      =============================== */
   function think(input) {
     const userTokens = tokenize(input);
@@ -55,24 +55,32 @@
       return { text: "मुझे प्रश्न स्पष्ट नहीं मिला।" };
     }
 
-    const knowledge = KnowledgeStore.all(); // 🔥 यही असली missing link था
+    const knowledge = KnowledgeStore.all();
 
-    let best = null;
+    let bestSentence = null;
     let bestScore = 0;
 
     for (const item of knowledge) {
-      const qTokens = tokenize(item.q);
-      const score = similarity(userTokens, qTokens);
+      // पूरे लेख को वाक्यों में तोड़ो
+      const sentences = item.a
+        .split("।")
+        .map(s => s.trim())
+        .filter(Boolean);
 
-      if (score > bestScore) {
-        bestScore = score;
-        best = item;
+      for (const sentence of sentences) {
+        const sTokens = tokenize(sentence);
+        const score = similarity(userTokens, sTokens);
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestSentence = sentence;
+        }
       }
     }
 
-    // न्यूनतम 2 शब्द match होने चाहिए
-    if (best && bestScore >= 2) {
-      return { text: best.a };
+    // न्यूनतम 2 शब्द match जरूरी
+    if (bestSentence && bestScore >= 2) {
+      return { text: bestSentence + "।" };
     }
 
     return {
