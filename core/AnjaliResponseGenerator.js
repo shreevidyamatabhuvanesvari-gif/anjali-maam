@@ -1,18 +1,18 @@
 /* ======================================================
-   core/AnjaliResponseGenerator.js — FRIEND VOICE ENGINE
+   core/AnjaliResponseGenerator.js — FRIEND FLOW ENGINE
    PURPOSE:
    - हर turn पर अंजली को बोलने योग्य बनाना
-   - प्रतिक्रिया + आगे बढ़ाने वाला प्रश्न/प्रस्ताव
-   - समय और संदर्भ के अनुसार भाव चुनना
+   - Soft MiniPlan (inclination / mood) के आधार पर
+     स्वाभाविक सवाल/प्रस्ताव खोलना
+   - कोई निर्णय नहीं, सिर्फ़ flow
    ====================================================== */
 
 (function (global) {
   "use strict";
 
   /* ===============================
-     TONE ENGINE
+     TIME-BASED TONE
      =============================== */
-
   function getTimeTone() {
     const hour = new Date().getHours();
 
@@ -22,111 +22,94 @@
     return "intimate-night";
   }
 
-  function getContextTone(memory) {
-    if (!memory || !memory.lastAction) return "neutral";
-
-    if (memory.lastAction === "reject") return "reassuring";
-    if (memory.lastAction === "accept") return "playful";
-    if (memory.lastAction === "question") return "curious";
-
-    return "neutral";
-  }
+  /* ===============================
+     BASIC REACTIONS (NON-SCRIPTED)
+     =============================== */
+  const REACTIONS = [
+    "हम्म…",
+    "अच्छा…",
+    "समझ रही हूँ…",
+    "ठीक है…",
+    "यह सुनकर अच्छा लगा…"
+  ];
 
   /* ===============================
-     LANGUAGE FRAGMENTS (NON-SCRIPTED)
+     SOFT FORWARD MOVES (BY INCLINATION)
      =============================== */
-
-  const REACTIONS = {
-    neutral: [
-      "हम्म…",
-      "अच्छा…",
-      "समझ रही हूँ…"
+  const FORWARD_BY_INCLINATION = {
+    travel: [
+      "तो अभी घूमने की कल्पना अच्छी लग रही है या बस यूँ ही?",
+      "अगर अभी बदलना चाहो तो किस तरह की जगह सोचोगे?",
+      "तुम्हें सफ़र का कौन-सा हिस्सा ज़्यादा अच्छा लगता है?"
     ],
-    reassuring: [
-      "कोई बात नहीं…",
-      "ठीक है, दबाव नहीं…",
-      "सब आराम से…"
+    movie: [
+      "फिल्म का मूड है या कहानी ज़्यादा मायने रखती है?",
+      "आज हल्की फिल्म देखनी है या कुछ सोचने वाली?",
+      "तुम किस तरह की फिल्म से ज़्यादा जुड़ते हो?"
     ],
-    playful: [
-      "अरे वाह…",
-      "यह तो अच्छा लगा…",
-      "हम्म, दिलचस्प…"
+    food: [
+      "अभी कुछ हल्का अच्छा लगेगा या पेट भरकर?",
+      "खाने में स्वाद ज़्यादा ज़रूरी है या साथ?",
+      "तुम्हारा comfort food क्या है?"
     ],
-    curious: [
-      "ओह…",
-      "अच्छा सवाल है…",
-      "यह सुनकर सोच में पड़ गई…"
-    ]
-  };
-
-  const FORWARD_MOVES = {
-    soft: [
-      "तो फिर तुम्हारा मन किस ओर जा रहा है?",
-      "अभी तुम्हें क्या अच्छा लगेगा?",
-      "आगे क्या सोच रहे हो?"
+    study: [
+      "अभी पढ़ाई भारी लग रही है या manageable?",
+      "तुम किस हिस्से से शुरू करना पसंद करते हो?",
+      "पढ़ते वक्त तुम्हें क्या चीज़ सबसे ज़्यादा परेशान करती है?"
     ],
-    playful: [
-      "चलो कुछ अलग सोचते हैं?",
-      "तो अब अगला क्या प्लान है?",
-      "कुछ मज़ेदार करते हैं?"
-    ],
-    intimate: [
-      "अभी तुम्हारे मन में क्या चल रहा है?",
-      "थोड़ा और बताओ ना…",
-      "तुम्हें क्या सुकून देगा?"
+    casual: [
+      "अभी बस बातें करने का मन है या कुछ सोचें?",
+      "तुम्हें किस तरह की बातचीत सुकून देती है?",
+      "अभी तुम्हारा मन किस तरफ़ है?"
     ]
   };
 
   /* ===============================
-     TONE → LANGUAGE MAPPING
+     GENERIC FORWARD (FALLBACK)
      =============================== */
+  const GENERIC_FORWARD = [
+    "तो अभी तुम्हारा मन किस ओर जा रहा है?",
+    "अभी तुम्हें क्या अच्छा लगेगा?",
+    "आगे क्या सोच रहे हो?"
+  ];
 
-  function pickReaction(tone) {
-    const pool = REACTIONS[tone] || REACTIONS.neutral;
-    return pool[Math.floor(Math.random() * pool.length)];
-  }
-
-  function pickForward(timeTone) {
-    if (timeTone === "intimate-night") {
-      return FORWARD_MOVES.intimate[
-        Math.floor(Math.random() * FORWARD_MOVES.intimate.length)
-      ];
-    }
-
-    if (timeTone === "soft-morning") {
-      return FORWARD_MOVES.soft[
-        Math.floor(Math.random() * FORWARD_MOVES.soft.length)
-      ];
-    }
-
-    return FORWARD_MOVES.playful[
-      Math.floor(Math.random() * FORWARD_MOVES.playful.length)
-    ];
+  /* ===============================
+     HELPERS
+     =============================== */
+  function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
   }
 
   /* ===============================
      MAIN GENERATOR
      =============================== */
-
   function generate(userText) {
-    const memory = global.AnjaliMemory
-      ? global.AnjaliMemory.getContext()
+    const miniPlan = global.AnjaliMiniPlan
+      ? global.AnjaliMiniPlan.getContext()
       : null;
 
-    const timeTone = getTimeTone();
-    const contextTone = getContextTone(memory);
+    const reaction = pick(REACTIONS);
 
-    const reaction = pickReaction(contextTone);
-    const forward = pickForward(timeTone);
+    let forward;
 
-    // Continuous friend-like presence
+    if (
+      miniPlan &&
+      miniPlan.inclination &&
+      FORWARD_BY_INCLINATION[miniPlan.inclination]
+    ) {
+      // Soft use of inclination (NOT final)
+      forward = pick(FORWARD_BY_INCLINATION[miniPlan.inclination]);
+    } else {
+      // Open-ended fallback
+      forward = pick(GENERIC_FORWARD);
+    }
+
     return `${reaction} ${forward}`;
   }
 
   /* ===============================
      EXPORT
      =============================== */
-
   global.AnjaliResponseGenerator = {
     generate
   };
