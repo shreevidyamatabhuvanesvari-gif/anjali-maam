@@ -1,9 +1,9 @@
 /* ======================================================
-   voice/anjali_friend_tts.js — FRIEND VOICE ENGINE
+   voice/anjali_friend_tts.js — FRIEND VOICE (YOUTHFUL)
    PURPOSE:
-   - मित्र मोड के लिए अलग, कोमल आवाज़
-   - समय और भाव के अनुसार voice modulation
-   - अपनापन और निकटता का अनुभव
+   - 24 वर्षीय मानवीय लड़की जैसी सुरीली, कोमल आवाज़
+   - भारीपन हटाकर हल्कापन + अपनापन
+   - समय के अनुसार subtle modulation
    ====================================================== */
 
 (function (global) {
@@ -15,40 +15,52 @@
   }
 
   /* ===============================
-     VOICE TONE SELECTOR
+     VOICE PROFILE (LIGHT & SWEET)
      =============================== */
   function getVoiceProfile() {
     const hour = new Date().getHours();
 
-    // default profile
+    // Base: youthful, light, feminine
     let profile = {
-      rate: 0.9,
-      pitch: 1.05,
-      volume: 1
+      rate: 1.02,   // natural, alive
+      pitch: 1.22,  // lighter, sweeter (reduces heaviness)
+      volume: 0.95
     };
 
-    // morning — soft & fresh
+    // Morning: fresh & bright
     if (hour >= 5 && hour < 12) {
-      profile.rate = 0.95;
-      profile.pitch = 1.1;
+      profile.rate = 1.05;
+      profile.pitch = 1.25;
     }
-    // day — warm & clear
+    // Day: warm & clear
     else if (hour >= 12 && hour < 17) {
-      profile.rate = 1.0;
-      profile.pitch = 1.05;
+      profile.rate = 1.03;
+      profile.pitch = 1.22;
     }
-    // evening — gentle & relaxed
+    // Evening: gentle & soft
     else if (hour >= 17 && hour < 21) {
-      profile.rate = 0.85;
-      profile.pitch = 1.0;
+      profile.rate = 0.98;
+      profile.pitch = 1.18;
     }
-    // night — intimate & slow
+    // Night: intimate & tender
     else {
-      profile.rate = 0.75;
-      profile.pitch = 0.95;
+      profile.rate = 0.92;
+      profile.pitch = 1.15;
     }
 
     return profile;
+  }
+
+  /* ===============================
+     MICRO-PAUSE ENRICHMENT
+     (adds softness without heaviness)
+     =============================== */
+  function soften(text) {
+    if (!text) return text;
+    // Light pauses after commas/phrases
+    return text
+      .replace(/, /g, ", … ")
+      .replace(/।/g, "… ");
   }
 
   /* ===============================
@@ -59,13 +71,20 @@
 
     speechSynthesis.cancel();
 
-    const u = new SpeechSynthesisUtterance(text);
+    const u = new SpeechSynthesisUtterance(soften(text));
     const tone = getVoiceProfile();
 
     u.lang = "hi-IN";
     u.rate = tone.rate;
     u.pitch = tone.pitch;
     u.volume = tone.volume;
+
+    // Prefer a female Hindi voice if available
+    const voices = speechSynthesis.getVoices();
+    const hiFemale = voices.find(v =>
+      v.lang === "hi-IN" && /female|woman|girl/i.test(v.name)
+    );
+    if (hiFemale) u.voice = hiFemale;
 
     speechSynthesis.speak(u);
   }
