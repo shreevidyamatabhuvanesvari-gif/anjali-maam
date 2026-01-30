@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>अंजली • मित्र+++ </title>
+<title>अंजली • मित्र </title>
 
 <style>
 body{
@@ -17,7 +17,7 @@ body{
 
 /* Header */
 .header{
-  padding:12px;
+  padding:14px;
   text-align:center;
   background:#fde7dc;
   border-bottom:1px solid #e6b2b2;
@@ -57,9 +57,28 @@ body{
   border:1px solid #f1c6b8;
 }
 
+/* Controls */
+.controls{
+  padding:10px;
+  display:flex;
+  gap:8px;
+  background:#fff;
+  border-top:1px solid #e6b2b2;
+}
+.controls button{
+  flex:1;
+  border:none;
+  border-radius:12px;
+  padding:10px;
+  font-size:14px;
+  cursor:pointer;
+  background:#c96a6a;
+  color:#fff;
+}
+
 /* Input */
 .inputArea{
-  display:flex;
+  display:none;
   gap:6px;
   padding:10px;
   background:#fff;
@@ -72,14 +91,13 @@ input{
   border:1px solid #ccc;
   font-size:14px;
 }
-button{
+button.send{
   border:none;
   border-radius:12px;
   padding:10px 14px;
   font-size:14px;
-  background:#c96a6a;
+  background:#a13f3f;
   color:#fff;
-  cursor:pointer;
 }
 </style>
 </head>
@@ -88,24 +106,47 @@ button{
 
 <div class="header">
   <h1>🌸 अंजली</h1>
-  <p>मैं यहीं हूँ…</p>
+  <p>मैं यहीं हूँ… तुम्हारे साथ</p>
 </div>
 
 <div class="chat" id="chatBox">
   <div class="msg anjali">
-    मैं यहीं हूँ।  
-    आप जो चाहें, कह सकते हैं…
+    जब तुम तैयार हो,  
+    तब “बातचीत शुरू करें” दबाना 🌸
   </div>
 </div>
 
-<div class="inputArea">
-  <input id="textInput" placeholder="यहाँ लिखें…" />
-  <button onclick="send()">भेजें</button>
+<!-- START / VOICE CONTROLS -->
+<div class="controls" id="startControls">
+  <button onclick="startChat()">💬 बातचीत शुरू करें</button>
+  <button onclick="startListening()">🎤 बोलकर बताओ</button>
 </div>
 
+<!-- INPUT AREA -->
+<div class="inputArea" id="inputArea">
+  <input id="textInput" placeholder="यहाँ लिखो…" />
+  <button class="send" onclick="send()">भेजें</button>
+</div>
+
+<!-- ================= VOICE ================= -->
+<script src="voice/stt.js"></script>
+<script src="voice/tts.js"></script>
+
+<!-- ================= CORE (Present + Future) ================= -->
+<script src="core/AnjaliCore.js"></script>
+
 <script>
+/* ======================================================
+   FRIEND+++ PANEL LOGIC (FINAL)
+   ====================================================== */
+
 const chatBox = document.getElementById("chatBox");
 const input = document.getElementById("textInput");
+const inputArea = document.getElementById("inputArea");
+const startControls = document.getElementById("startControls");
+
+/* Lock mode */
+AnjaliCore.setMode("friend");
 
 /* Add message */
 function addMsg(text, who){
@@ -116,22 +157,20 @@ function addMsg(text, who){
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-/* Friend+++ response (VERY SIMPLE v1) */
-function friendRespond(userText){
-  // Minimal empathy rules (v1)
-  if(userText.includes("नहीं") || userText.includes("परेशान")){
-    return "यह सच में कठिन लगता है… मैं समझ सकती हूँ।";
-  }
-  if(userText.includes("अकेला") || userText.includes("अकेली")){
-    return "आप अकेले नहीं हैं। मैं यहीं हूँ।";
-  }
-  if(userText.includes("धन्यवाद")){
-    return "🙂";
-  }
-  return "मैं सुन रही हूँ… अगर चाहें तो और बताइए।";
+/* Start chat */
+function startChat(){
+  startControls.style.display = "none";
+  inputArea.style.display = "flex";
+
+  addMsg(
+    "मैं यहाँ हूँ।  
+तुम जो भी महसूस कर रहे हो,  
+बिना डर कह सकते हो।",
+    "anjali"
+  );
 }
 
-/* Send */
+/* Send text */
 function send(){
   const text = input.value.trim();
   if(!text) return;
@@ -140,9 +179,29 @@ function send(){
   addMsg(text, "user");
 
   setTimeout(()=>{
-    const reply = friendRespond(text);
+    const reply = AnjaliCore.handleInput(text);
     addMsg(reply, "anjali");
   }, 400);
+}
+
+/* Voice input */
+function startListening(){
+  if (!window.AnjaliSTT || !AnjaliSTT.available) {
+    addMsg("माफ़ करना… अभी माइक्रोफ़ोन उपलब्ध नहीं है।", "anjali");
+    return;
+  }
+
+  startChat();
+
+  AnjaliSTT.unlock();
+  AnjaliSTT.onText = function(text){
+    addMsg(text, "user");
+    const reply = AnjaliCore.handleInput(text);
+    addMsg(reply, "anjali");
+  };
+
+  addMsg("मैं सुन रही हूँ… बोलो।", "anjali");
+  AnjaliSTT.start();
 }
 </script>
 
