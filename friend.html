@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>अंजली • मित्र+++ </title>
+
+<style>
+body{
+  margin:0;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  font-family:system-ui,"Noto Sans Devanagari",sans-serif;
+  background:#fff6f1;
+}
+
+/* Header */
+.header{
+  padding:12px;
+  text-align:center;
+  background:#fde7dc;
+  border-bottom:1px solid #e6b2b2;
+}
+.header h1{
+  margin:0;
+  font-size:20px;
+  color:#8b2d2d;
+}
+.header p{
+  margin:4px 0 0;
+  font-size:12px;
+  color:#6b2c2c;
+}
+
+/* Chat Area */
+.chat{
+  flex:1;
+  padding:14px;
+  overflow-y:auto;
+}
+.msg{
+  max-width:80%;
+  padding:10px 12px;
+  margin:8px 0;
+  border-radius:14px;
+  line-height:1.4;
+  white-space:pre-wrap;
+  font-size:14px;
+}
+.user{
+  margin-left:auto;
+  background:#ffe8dc;
+}
+.anjali{
+  background:#ffffff;
+  border:1px solid #f1c6b8;
+}
+
+/* Input */
+.inputArea{
+  display:flex;
+  gap:6px;
+  padding:10px;
+  background:#fff;
+  border-top:1px solid #e6b2b2;
+}
+input{
+  flex:1;
+  padding:10px;
+  border-radius:12px;
+  border:1px solid #ccc;
+  font-size:14px;
+}
+button{
+  border:none;
+  border-radius:12px;
+  padding:10px 14px;
+  font-size:14px;
+  background:#c96a6a;
+  color:#fff;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h1>🌸 अंजली</h1>
+  <p>मैं यहीं हूँ…</p>
+</div>
+
+<div class="chat" id="chatBox">
+  <div class="msg anjali">
+    मैं यहीं हूँ।  
+    आप जो चाहें, कह सकते हैं…
+  </div>
+</div>
+
+<div class="inputArea">
+  <input id="textInput" placeholder="यहाँ लिखें…" />
+  <button onclick="send()">भेजें</button>
+</div>
+
+<script>
+const chatBox = document.getElementById("chatBox");
+const input = document.getElementById("textInput");
+
+/* Add message */
+function addMsg(text, who){
+  const d = document.createElement("div");
+  d.className = "msg " + who;
+  d.textContent = text;
+  chatBox.appendChild(d);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+/* Friend+++ response (VERY SIMPLE v1) */
+function friendRespond(userText){
+  // Minimal empathy rules (v1)
+  if(userText.includes("नहीं") || userText.includes("परेशान")){
+    return "यह सच में कठिन लगता है… मैं समझ सकती हूँ।";
+  }
+  if(userText.includes("अकेला") || userText.includes("अकेली")){
+    return "आप अकेले नहीं हैं। मैं यहीं हूँ।";
+  }
+  if(userText.includes("धन्यवाद")){
+    return "🙂";
+  }
+  return "मैं सुन रही हूँ… अगर चाहें तो और बताइए।";
+}
+
+/* Send */
+function send(){
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = "";
+
+  addMsg(text, "user");
+
+  setTimeout(()=>{
+    const reply = friendRespond(text);
+    addMsg(reply, "anjali");
+  }, 400);
+}
+</script>
+
+</body>
+</html>
