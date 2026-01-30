@@ -14,26 +14,15 @@ body{
   font-family:system-ui,"Noto Sans Devanagari",sans-serif;
   background:#fff6f1;
 }
-
-/* Header */
 .header{
   padding:14px;
   text-align:center;
   background:#fde7dc;
   border-bottom:1px solid #e6b2b2;
 }
-.header h1{
-  margin:0;
-  font-size:20px;
-  color:#8b2d2d;
-}
-.header p{
-  margin:4px 0 0;
-  font-size:12px;
-  color:#6b2c2c;
-}
+.header h1{margin:0;font-size:20px;color:#8b2d2d}
+.header p{margin:4px 0 0;font-size:12px;color:#6b2c2c}
 
-/* Chat Area */
 .chat{
   flex:1;
   padding:14px;
@@ -48,24 +37,18 @@ body{
   white-space:pre-wrap;
   font-size:14px;
 }
-.user{
-  margin-left:auto;
-  background:#ffe8dc;
-}
-.anjali{
-  background:#ffffff;
-  border:1px solid #f1c6b8;
-}
+.user{margin-left:auto;background:#ffe8dc}
+.anjali{background:#ffffff;border:1px solid #f1c6b8}
 
-/* Controls */
-.controls{
+.controls,.inputArea{
   padding:10px;
   display:flex;
   gap:8px;
   background:#fff;
   border-top:1px solid #e6b2b2;
 }
-.controls button{
+.controls button,
+.inputArea button{
   flex:1;
   border:none;
   border-radius:12px;
@@ -75,15 +58,7 @@ body{
   background:#c96a6a;
   color:#fff;
 }
-
-/* Input */
-.inputArea{
-  display:none;
-  gap:6px;
-  padding:10px;
-  background:#fff;
-  border-top:1px solid #e6b2b2;
-}
+.inputArea{display:none}
 input{
   flex:1;
   padding:10px;
@@ -91,64 +66,48 @@ input{
   border:1px solid #ccc;
   font-size:14px;
 }
-button.send{
-  border:none;
-  border-radius:12px;
-  padding:10px 14px;
-  font-size:14px;
-  background:#a13f3f;
-  color:#fff;
-}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-  <h1>🌸 अंजली</h1>
+  <h1>अंजली</h1>
   <p>मैं यहीं हूँ… तुम्हारे साथ</p>
 </div>
 
 <div class="chat" id="chatBox">
   <div class="msg anjali">
     जब तुम तैयार हो,  
-    तब “बातचीत शुरू करें” दबाना 🌸
+    “बातचीत शुरू करें” दबाओ 
   </div>
 </div>
 
-<!-- START / VOICE CONTROLS -->
 <div class="controls" id="startControls">
   <button onclick="startChat()">💬 बातचीत शुरू करें</button>
   <button onclick="startListening()">🎤 बोलकर बताओ</button>
 </div>
 
-<!-- INPUT AREA -->
 <div class="inputArea" id="inputArea">
   <input id="textInput" placeholder="यहाँ लिखो…" />
-  <button class="send" onclick="send()">भेजें</button>
+  <button onclick="sendText()">भेजें</button>
 </div>
 
-<!-- ================= VOICE ================= -->
+<!-- VOICE -->
 <script src="voice/stt.js"></script>
 <script src="voice/tts.js"></script>
 
-<!-- ================= CORE (Present + Future) ================= -->
+<!-- CORE -->
 <script src="core/AnjaliCore.js"></script>
 
 <script>
-/* ======================================================
-   FRIEND+++ PANEL LOGIC (FINAL)
-   ====================================================== */
-
 const chatBox = document.getElementById("chatBox");
 const input = document.getElementById("textInput");
 const inputArea = document.getElementById("inputArea");
 const startControls = document.getElementById("startControls");
 
-/* Lock mode */
 AnjaliCore.setMode("friend");
 
-/* Add message */
 function addMsg(text, who){
   const d = document.createElement("div");
   d.className = "msg " + who;
@@ -157,47 +116,56 @@ function addMsg(text, who){
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-/* Start chat */
 function startChat(){
   startControls.style.display = "none";
   inputArea.style.display = "flex";
+  input.focus();
 
   addMsg(
     "मैं यहाँ हूँ।  
-तुम जो भी महसूस कर रहे हो,  
+तुम जो भी कहना चाहो,  
 बिना डर कह सकते हो।",
     "anjali"
   );
 }
 
-/* Send text */
-function send(){
+function sendText(){
   const text = input.value.trim();
   if(!text) return;
   input.value = "";
 
   addMsg(text, "user");
 
-  setTimeout(()=>{
-    const reply = AnjaliCore.handleInput(text);
-    addMsg(reply, "anjali");
-  }, 400);
+  const reply = AnjaliCore.handleInput(text);
+  addMsg(reply, "anjali");
+
+  if(window.AnjaliTTS){
+    AnjaliTTS.speak(reply);
+  }
 }
 
-/* Voice input */
+/* ENTER key support */
+input.addEventListener("keydown", e=>{
+  if(e.key === "Enter") sendText();
+});
+
+/* Voice flow */
 function startListening(){
-  if (!window.AnjaliSTT || !AnjaliSTT.available) {
-    addMsg("माफ़ करना… अभी माइक्रोफ़ोन उपलब्ध नहीं है।", "anjali");
+  if(!window.AnjaliSTT || !AnjaliSTT.available){
+    addMsg("अभी माइक्रोफ़ोन उपलब्ध नहीं है।", "anjali");
     return;
   }
 
   startChat();
-
   AnjaliSTT.unlock();
+
   AnjaliSTT.onText = function(text){
     addMsg(text, "user");
     const reply = AnjaliCore.handleInput(text);
     addMsg(reply, "anjali");
+    if(window.AnjaliTTS){
+      AnjaliTTS.speak(reply);
+    }
   };
 
   addMsg("मैं सुन रही हूँ… बोलो।", "anjali");
