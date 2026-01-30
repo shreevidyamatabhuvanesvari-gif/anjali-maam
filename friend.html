@@ -93,13 +93,15 @@ input{
   <button onclick="sendText()">भेजें</button>
 </div>
 
-<!-- FRIEND CORE ONLY -->
+<!-- FRIEND CORE -->
 <script src="core/AnjaliCore.js"></script>
-<!-- FRIEND INITIATIVE (NEW) -->
+
+<!-- FRIEND INITIATIVE -->
 <script src="core/AnjaliInitiative.js"></script>
-  <!-- FRIEND MEMORY (NEW) -->
+
+<!-- FRIEND MEMORY -->
 <script src="core/AnjaliMemory.js"></script>
-  
+
 <script>
 const chatBox = document.getElementById("chatBox");
 const input = document.getElementById("textInput");
@@ -141,11 +143,25 @@ function sendText(){
 
   addMsg(text, "user");
 
+  /* 🔑 OPTION A: MEMORY WIRING */
+  if (window.AnjaliMemory) {
+    AnjaliMemory.remember(text);
+  }
+
   const reply = AnjaliCore.handleInput(text);
   addMsg(reply, "anjali");
 
   speechSynthesis.cancel();
   speechSynthesis.speak(new SpeechSynthesisUtterance(reply));
+
+  /* initiative check (still passive) */
+  if (window.AnjaliInitiative) {
+    const initiative = AnjaliInitiative.maybeInitiate(text);
+    if (initiative) {
+      addMsg(initiative, "anjali");
+      speechSynthesis.speak(new SpeechSynthesisUtterance(initiative));
+    }
+  }
 }
 
 /* ENTER KEY */
@@ -153,7 +169,7 @@ input.addEventListener("keydown", e=>{
   if(e.key === "Enter") sendText();
 });
 
-/* VOICE (SINGLE SHOT STT) */
+/* VOICE */
 function startListening(){
   startChat();
 
@@ -174,11 +190,24 @@ function startListening(){
     const text = e.results[0][0].transcript.trim();
     addMsg(text, "user");
 
+    /* 🔑 OPTION A: MEMORY WIRING */
+    if (window.AnjaliMemory) {
+      AnjaliMemory.remember(text);
+    }
+
     const reply = AnjaliCore.handleInput(text);
     addMsg(reply, "anjali");
 
     speechSynthesis.cancel();
     speechSynthesis.speak(new SpeechSynthesisUtterance(reply));
+
+    if (window.AnjaliInitiative) {
+      const initiative = AnjaliInitiative.maybeInitiate(text);
+      if (initiative) {
+        addMsg(initiative, "anjali");
+        speechSynthesis.speak(new SpeechSynthesisUtterance(initiative));
+      }
+    }
   };
 
   rec.onerror = ()=>{
