@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>अंजली • मित्र </title>
+<title>अंजली • मित्र</title>
 
 <style>
 body{
@@ -83,7 +83,7 @@ input{
   </div>
 </div>
 
-<div class="controls" id="startControls">
+<div class="controls">
   <button onclick="startChat()">💬 बातचीत शुरू करें</button>
   <button onclick="startListening()">🎤 बोलकर बताओ</button>
 </div>
@@ -104,10 +104,10 @@ input{
 const chatBox = document.getElementById("chatBox");
 const input = document.getElementById("textInput");
 const inputArea = document.getElementById("inputArea");
-const startControls = document.getElementById("startControls");
 
 AnjaliCore.setMode("friend");
 
+/* util */
 function addMsg(text, who){
   const d = document.createElement("div");
   d.className = "msg " + who;
@@ -116,19 +116,19 @@ function addMsg(text, who){
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+/* ✅ बातचीत शुरू करें — NOW REAL */
 function startChat(){
-  startControls.style.display = "none";
   inputArea.style.display = "flex";
   input.focus();
 
   addMsg(
     "मैं यहाँ हूँ।  
-तुम जो भी कहना चाहो,  
-बिना डर कह सकते हो।",
+धीरे-धीरे जो मन में है, कहो।",
     "anjali"
   );
 }
 
+/* TEXT SEND */
 function sendText(){
   const text = input.value.trim();
   if(!text) return;
@@ -144,20 +144,22 @@ function sendText(){
   }
 }
 
-/* ENTER key support */
+/* ENTER key */
 input.addEventListener("keydown", e=>{
   if(e.key === "Enter") sendText();
 });
 
-/* Voice flow */
+/* ✅ बोलकर बताओ — FIXED */
 function startListening(){
   if(!window.AnjaliSTT || !AnjaliSTT.available){
     addMsg("अभी माइक्रोफ़ोन उपलब्ध नहीं है।", "anjali");
     return;
   }
 
-  startChat();
+  // IMPORTANT: must be inside click
   AnjaliSTT.unlock();
+
+  addMsg("मैं सुन रही हूँ… बोलो।", "anjali");
 
   AnjaliSTT.onText = function(text){
     addMsg(text, "user");
@@ -168,8 +170,7 @@ function startListening(){
     }
   };
 
-  addMsg("मैं सुन रही हूँ… बोलो।", "anjali");
-  AnjaliSTT.start();
+  AnjaliSTT.start(); // single-shot listen
 }
 </script>
 
