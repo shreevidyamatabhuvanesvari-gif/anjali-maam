@@ -25,7 +25,7 @@ body{
 }
 .card{
   width:94%;
-  max-width:460px;
+  max-width:480px;
   background:var(--card);
   border-radius:22px;
   padding:22px;
@@ -61,7 +61,7 @@ body{
   gap:10px;
   justify-content:center;
   flex-wrap:wrap;
-  margin-top:12px;
+  margin-top:14px;
 }
 .btn{
   border:none;
@@ -81,7 +81,7 @@ body{
 .footer{
   font-size:11px;
   color:#777;
-  margin-top:14px;
+  margin-top:16px;
 }
 </style>
 </head>
@@ -90,30 +90,34 @@ body{
 <main class="card">
 
 <div class="title">🌸 अंजली मैम</div>
-<div class="subtitle">Verified Control Center (Final)</div>
+<div class="subtitle">Verified Control Center (Locked)</div>
 
 <div class="status" id="statusBox">
-  🌸 मोड: मित्र+++ (default)
+  🌸 अंजली तैयार है
 </div>
 
 <textarea id="tempBoard" class="board"
-placeholder="यह अस्थायी Digital Board / Test Area है…"></textarea>
+placeholder="यह अस्थायी Test Area है…&#10;Mic / TTS परीक्षण के लिए।"></textarea>
 
 <div class="actions">
-  <!-- MODE -->
-  <button class="btn secondary" onclick="setMode('friend')">🌸 मित्र+++ मोड</button>
 
-  <!-- MAIN NAV -->
-  <button class="btn" onclick="openChat()">🖊 Digital Board</button>
+  <!-- 🌸 FRIEND PANEL -->
+  <button class="btn secondary" onclick="openFriend()"> मित्र पैनल</button>
+
+  <!-- 👩‍🏫 TEACHER PANEL -->
+  <button class="btn" onclick="openChat()">🖊 Digital Board (शिक्षक)</button>
+
+  <!-- 🔐 ADMIN -->
   <button class="btn secondary" onclick="openAdmin()">🔐 Admin Panel</button>
 
-  <!-- TESTING -->
+  <!-- 🎤 / 🔊 TESTING -->
   <button class="btn" onclick="micTest()">🎤 Mic Test</button>
   <button class="btn" onclick="ttsTest()">🔊 TTS Test</button>
+
 </div>
 
 <div class="footer">
-  Index Locked • One-Time Configuration Hub
+  Index Locked • Control Only • No Business Logic Here
 </div>
 
 </main>
@@ -122,30 +126,19 @@ placeholder="यह अस्थायी Digital Board / Test Area है…"><
 <script src="voice/stt.js"></script>
 <script src="voice/tts.js"></script>
 
-<!-- ================= CORE ================= -->
+<!-- ================= CORE (Present + Future) ================= -->
 <script src="core/KnowledgeStore.js"></script>
 <script src="core/ThinkingEngine.js"></script>
 <script src="core/PresentationEngine.js"></script>
+<script src="core/AnjaliCore.js"></script>
 
 <script>
-/* ================= MODE ================= */
-let ANJALI_MODE = localStorage.getItem("ANJALI_MODE") || "friend";
+/* ======================================================
+   INDEX.JS — CONTROL ONLY (NO LOGIC)
+   ====================================================== */
 
-function setMode(mode){
-  ANJALI_MODE = mode;
-  localStorage.setItem("ANJALI_MODE", mode);
-
-  if(mode === "friend"){
-    statusBox.innerText = "🌸 मोड: मित्र+++ (पहले सुनना, फिर मार्गदर्शन)";
-    tempBoard.value =
-      "अंजली मित्र+++ मोड में है।\nयहाँ भावनात्मक समझ पहले आएगी।";
-  }else{
-    statusBox.innerText = "👩‍🏫 मोड: शिक्षक";
-    tempBoard.value =
-      "अंजली शिक्षक मोड में है।\nस्पष्ट उत्तर और Digital Board सक्रिय।";
-  }
-}
-setMode(ANJALI_MODE);
+const statusBox = document.getElementById("statusBox");
+const tempBoard = document.getElementById("tempBoard");
 
 /* ================= MIC TEST ================= */
 function micTest(){
@@ -154,7 +147,9 @@ function micTest(){
     return;
   }
   AnjaliSTT.unlock();
-  AnjaliSTT.onText = text => tempBoard.value = text;
+  AnjaliSTT.onText = text => {
+    tempBoard.value = text;
+  };
   statusBox.innerText = "🎤 सुन रही हूँ…";
   AnjaliSTT.start();
 }
@@ -168,12 +163,22 @@ function ttsTest(){
   const text = "नमस्ते! मैं अंजली मैम हूँ।";
   tempBoard.value = text;
   statusBox.innerText = "🔊 बोल रही हूँ…";
+  speechSynthesis.cancel();
   speechSynthesis.speak(new SpeechSynthesisUtterance(text));
 }
 
-/* ================= NAV ================= */
-function openAdmin(){ location.href = "admin.html"; }
-function openChat(){ location.href = "anjali_chat.html"; }
+/* ================= NAVIGATION ================= */
+function openFriend(){
+  location.href = "friend.html";
+}
+
+function openChat(){
+  location.href = "anjali_chat.html";
+}
+
+function openAdmin(){
+  location.href = "admin.html";
+}
 </script>
 
 </body>
