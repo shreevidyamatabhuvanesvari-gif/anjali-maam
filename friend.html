@@ -102,6 +102,9 @@ input{
 <!-- FRIEND MEMORY -->
 <script src="core/AnjaliMemory.js"></script>
 
+<!-- FRIEND RESPONSE GENERATOR (NEW) -->
+<script src="core/AnjaliResponseGenerator.js"></script>
+
 <script>
 const chatBox = document.getElementById("chatBox");
 const input = document.getElementById("textInput");
@@ -143,25 +146,24 @@ function sendText(){
 
   addMsg(text, "user");
 
-  /* 🔑 OPTION A: MEMORY WIRING */
+  /* MEMORY */
   if (window.AnjaliMemory) {
     AnjaliMemory.remember(text);
   }
 
-  const reply = AnjaliCore.handleInput(text);
+  /* CORE RESPONSE (baseline presence) */
+  let reply = AnjaliCore.handleInput(text);
+
+  /* RESPONSE GENERATOR (always adds flow + question) */
+  if (window.AnjaliResponseGenerator) {
+    const flow = AnjaliResponseGenerator.generate(text);
+    reply = reply ? reply + " " + flow : flow;
+  }
+
   addMsg(reply, "anjali");
 
   speechSynthesis.cancel();
   speechSynthesis.speak(new SpeechSynthesisUtterance(reply));
-
-  /* initiative check (still passive) */
-  if (window.AnjaliInitiative) {
-    const initiative = AnjaliInitiative.maybeInitiate(text);
-    if (initiative) {
-      addMsg(initiative, "anjali");
-      speechSynthesis.speak(new SpeechSynthesisUtterance(initiative));
-    }
-  }
 }
 
 /* ENTER KEY */
@@ -190,24 +192,21 @@ function startListening(){
     const text = e.results[0][0].transcript.trim();
     addMsg(text, "user");
 
-    /* 🔑 OPTION A: MEMORY WIRING */
     if (window.AnjaliMemory) {
       AnjaliMemory.remember(text);
     }
 
-    const reply = AnjaliCore.handleInput(text);
+    let reply = AnjaliCore.handleInput(text);
+
+    if (window.AnjaliResponseGenerator) {
+      const flow = AnjaliResponseGenerator.generate(text);
+      reply = reply ? reply + " " + flow : flow;
+    }
+
     addMsg(reply, "anjali");
 
     speechSynthesis.cancel();
     speechSynthesis.speak(new SpeechSynthesisUtterance(reply));
-
-    if (window.AnjaliInitiative) {
-      const initiative = AnjaliInitiative.maybeInitiate(text);
-      if (initiative) {
-        addMsg(initiative, "anjali");
-        speechSynthesis.speak(new SpeechSynthesisUtterance(initiative));
-      }
-    }
   };
 
   rec.onerror = ()=>{
