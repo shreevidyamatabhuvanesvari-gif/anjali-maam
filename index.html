@@ -25,7 +25,7 @@ body{
 }
 .card{
   width:94%;
-  max-width:440px;
+  max-width:460px;
   background:var(--card);
   border-radius:22px;
   padding:22px;
@@ -33,19 +33,21 @@ body{
   text-align:center;
 }
 .title{font-size:26px;color:var(--accent)}
-.subtitle{font-size:14px;color:#555;margin-bottom:12px}
+.subtitle{font-size:14px;color:#555;margin-bottom:10px}
+
 .status{
   background:#fff7f4;
   border:1px solid #f3d4c7;
   border-radius:14px;
   padding:10px;
   font-size:13px;
-  margin:8px 0;
+  margin:10px 0;
   color:#6b2c2c;
 }
+
 .board{
   width:100%;
-  min-height:100px;
+  min-height:90px;
   margin-top:10px;
   padding:10px;
   border-radius:12px;
@@ -53,12 +55,13 @@ body{
   font-size:14px;
   resize:none;
 }
+
 .actions{
   display:flex;
   gap:10px;
   justify-content:center;
   flex-wrap:wrap;
-  margin-top:10px;
+  margin-top:12px;
 }
 .btn{
   border:none;
@@ -74,6 +77,7 @@ body{
   color:var(--soft);
   border:1px dashed #e6b2b2;
 }
+
 .footer{
   font-size:11px;
   color:#777;
@@ -86,26 +90,30 @@ body{
 <main class="card">
 
 <div class="title">🌸 अंजली मैम</div>
-<div class="subtitle">Verified Control Center</div>
+<div class="subtitle">Verified Control Center (Final)</div>
 
 <div class="status" id="statusBox">
-  Phase-1: आवाज़ और सुनने का परीक्षण
+  🌸 मोड: मित्र+++ (default)
 </div>
 
-<!-- 🔹 Temporary Digital Board -->
 <textarea id="tempBoard" class="board"
-placeholder="यह अस्थायी Digital Board है...&#10;Mic से जो बोला जाएगा वह यहाँ दिखेगा।"></textarea>
+placeholder="यह अस्थायी Digital Board / Test Area है…"></textarea>
 
 <div class="actions">
+  <!-- MODE -->
+  <button class="btn secondary" onclick="setMode('friend')">🌸 मित्र+++ मोड</button>
+
+  <!-- MAIN NAV -->
+  <button class="btn" onclick="openChat()">🖊 Digital Board</button>
+  <button class="btn secondary" onclick="openAdmin()">🔐 Admin Panel</button>
+
+  <!-- TESTING -->
   <button class="btn" onclick="micTest()">🎤 Mic Test</button>
   <button class="btn" onclick="ttsTest()">🔊 TTS Test</button>
-
-  <button class="btn secondary" onclick="openAdmin()">🔐 Admin Panel</button>
-  <button class="btn secondary" onclick="openChat()">🖊 Digital Board</button>
 </div>
 
 <div class="footer">
-  Blueprint Locked • Index will never change again
+  Index Locked • One-Time Configuration Hub
 </div>
 
 </main>
@@ -120,45 +128,52 @@ placeholder="यह अस्थायी Digital Board है...&#10;Mic से
 <script src="core/PresentationEngine.js"></script>
 
 <script>
+/* ================= MODE ================= */
+let ANJALI_MODE = localStorage.getItem("ANJALI_MODE") || "friend";
+
+function setMode(mode){
+  ANJALI_MODE = mode;
+  localStorage.setItem("ANJALI_MODE", mode);
+
+  if(mode === "friend"){
+    statusBox.innerText = "🌸 मोड: मित्र+++ (पहले सुनना, फिर मार्गदर्शन)";
+    tempBoard.value =
+      "अंजली मित्र+++ मोड में है।\nयहाँ भावनात्मक समझ पहले आएगी।";
+  }else{
+    statusBox.innerText = "👩‍🏫 मोड: शिक्षक";
+    tempBoard.value =
+      "अंजली शिक्षक मोड में है।\nस्पष्ट उत्तर और Digital Board सक्रिय।";
+  }
+}
+setMode(ANJALI_MODE);
+
 /* ================= MIC TEST ================= */
 function micTest(){
   if (!window.AnjaliSTT || !AnjaliSTT.available) {
     statusBox.innerText = "❌ Mic उपलब्ध नहीं";
     return;
   }
-
   AnjaliSTT.unlock();
-  AnjaliSTT.onText = function(text){
-    tempBoard.value = text;
-  };
-
-  statusBox.innerText = "🎤 सुन रही हूँ...";
+  AnjaliSTT.onText = text => tempBoard.value = text;
+  statusBox.innerText = "🎤 सुन रही हूँ…";
   AnjaliSTT.start();
 }
 
 /* ================= TTS TEST ================= */
 function ttsTest(){
   if(!("speechSynthesis" in window)){
-    statusBox.innerText = "❌ आपका ब्राउज़र आवाज़ सपोर्ट नहीं करता";
+    statusBox.innerText = "❌ ब्राउज़र TTS सपोर्ट नहीं करता";
     return;
   }
-
-  const text = "नमस्ते! मैं अंजली मैम हूँ। मेरी आवाज़ सही काम कर रही है।";
+  const text = "नमस्ते! मैं अंजली मैम हूँ।";
   tempBoard.value = text;
-
-  statusBox.innerText = "🔊 बोल रही हूँ...";
-  speechSynthesis.speak(
-    new SpeechSynthesisUtterance(text)
-  );
+  statusBox.innerText = "🔊 बोल रही हूँ…";
+  speechSynthesis.speak(new SpeechSynthesisUtterance(text));
 }
 
 /* ================= NAV ================= */
-function openAdmin(){
-  location.href = "admin.html";
-}
-function openChat(){
-  location.href = "anjali_chat.html";
-}
+function openAdmin(){ location.href = "admin.html"; }
+function openChat(){ location.href = "anjali_chat.html"; }
 </script>
 
 </body>
