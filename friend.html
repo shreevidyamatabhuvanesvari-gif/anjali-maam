@@ -93,7 +93,7 @@ input{
   <button onclick="sendText()">भेजें</button>
 </div>
 
-<!-- CORE ONLY (Friend mode) -->
+<!-- FRIEND CORE ONLY -->
 <script src="core/AnjaliCore.js"></script>
 
 <script>
@@ -101,10 +101,9 @@ const chatBox = document.getElementById("chatBox");
 const input = document.getElementById("textInput");
 const inputArea = document.getElementById("inputArea");
 
-AnjaliCore.setMode("friend");
 let chatStarted = false;
 
-/* utils */
+/* utility */
 function addMsg(text, who){
   const d = document.createElement("div");
   d.className = "msg " + who;
@@ -124,14 +123,13 @@ function startChat(){
   const welcome = "मैं यहाँ हूँ। धीरे-धीरे जो मन में है, कहो।";
   addMsg(welcome, "anjali");
 
-  // FIRST TTS MUST BE USER GESTURE
   if(window.speechSynthesis){
     speechSynthesis.cancel();
     speechSynthesis.speak(new SpeechSynthesisUtterance(welcome));
   }
 }
 
-/* TEXT */
+/* SEND TEXT */
 function sendText(){
   const text = input.value.trim();
   if(!text) return;
@@ -146,12 +144,12 @@ function sendText(){
   speechSynthesis.speak(new SpeechSynthesisUtterance(reply));
 }
 
-/* ENTER */
+/* ENTER KEY */
 input.addEventListener("keydown", e=>{
   if(e.key === "Enter") sendText();
 });
 
-/* 🎤 VERIFIED SINGLE-SHOT STT */
+/* VOICE (SINGLE SHOT STT) */
 function startListening(){
   startChat();
 
@@ -164,7 +162,7 @@ function startListening(){
   const rec = new SR();
   rec.lang = "hi-IN";
   rec.interimResults = false;
-  rec.continuous = false; // 🔑 IMPORTANT
+  rec.continuous = false;
 
   addMsg("मैं सुन रही हूँ… बोलो।", "anjali");
 
@@ -183,7 +181,7 @@ function startListening(){
     addMsg("माफ़ करना… आवाज़ समझ नहीं आई।", "anjali");
   };
 
-  rec.start(); // USER GESTURE CONTEXT ✔️
+  rec.start();
 }
 </script>
 
