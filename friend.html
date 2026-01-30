@@ -79,7 +79,7 @@ input{
 <div class="chat" id="chatBox">
   <div class="msg anjali">
     जब तुम तैयार हो,  
-    “बातचीत शुरू करें” दबाओ 
+    “बातचीत शुरू करें” दबाओ 🌸
   </div>
 </div>
 
@@ -93,14 +93,7 @@ input{
   <button onclick="sendText()">भेजें</button>
 </div>
 
-<!-- ================= VOICE ================= -->
-<script src="voice/stt.js"></script>
-<script src="voice/tts.js"></script>
-
-<!-- ================= CORE (Present + Future) ================= -->
-<script src="core/KnowledgeStore.js"></script>
-<script src="core/ThinkingEngine.js"></script>
-<script src="core/PresentationEngine.js"></script>
+<!-- CORE ONLY (Friend mode) -->
 <script src="core/AnjaliCore.js"></script>
 
 <script>
@@ -109,8 +102,9 @@ const input = document.getElementById("textInput");
 const inputArea = document.getElementById("inputArea");
 
 AnjaliCore.setMode("friend");
+let chatStarted = false;
 
-/* util */
+/* utils */
 function addMsg(text, who){
   const d = document.createElement("div");
   d.className = "msg " + who;
@@ -119,19 +113,25 @@ function addMsg(text, who){
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-/* ✅ बातचीत शुरू करें — NOW REAL */
+/* START CHAT */
 function startChat(){
+  if(chatStarted) return;
+  chatStarted = true;
+
   inputArea.style.display = "flex";
   input.focus();
 
-  addMsg(
-    "मैं यहाँ हूँ।  
-धीरे-धीरे जो मन में है, कहो।",
-    "anjali"
-  );
+  const welcome = "मैं यहाँ हूँ। धीरे-धीरे जो मन में है, कहो।";
+  addMsg(welcome, "anjali");
+
+  // FIRST TTS MUST BE USER GESTURE
+  if(window.speechSynthesis){
+    speechSynthesis.cancel();
+    speechSynthesis.speak(new SpeechSynthesisUtterance(welcome));
+  }
 }
 
-/* TEXT SEND */
+/* TEXT */
 function sendText(){
   const text = input.value.trim();
   if(!text) return;
@@ -142,38 +142,48 @@ function sendText(){
   const reply = AnjaliCore.handleInput(text);
   addMsg(reply, "anjali");
 
-  if(window.AnjaliTTS){
-    AnjaliTTS.speak(reply);
-  }
+  speechSynthesis.cancel();
+  speechSynthesis.speak(new SpeechSynthesisUtterance(reply));
 }
 
-/* ENTER key */
+/* ENTER */
 input.addEventListener("keydown", e=>{
   if(e.key === "Enter") sendText();
 });
 
-/* ✅ बोलकर बताओ — FIXED */
+/* 🎤 VERIFIED SINGLE-SHOT STT */
 function startListening(){
-  if(!window.AnjaliSTT || !AnjaliSTT.available){
-    addMsg("अभी माइक्रोफ़ोन उपलब्ध नहीं है।", "anjali");
+  startChat();
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    addMsg("माफ़ करना… माइक्रोफ़ोन सपोर्ट नहीं है।", "anjali");
     return;
   }
 
-  // IMPORTANT: must be inside click
-  AnjaliSTT.unlock();
+  const rec = new SR();
+  rec.lang = "hi-IN";
+  rec.interimResults = false;
+  rec.continuous = false; // 🔑 IMPORTANT
 
   addMsg("मैं सुन रही हूँ… बोलो।", "anjali");
 
-  AnjaliSTT.onText = function(text){
+  rec.onresult = e=>{
+    const text = e.results[0][0].transcript.trim();
     addMsg(text, "user");
+
     const reply = AnjaliCore.handleInput(text);
     addMsg(reply, "anjali");
-    if(window.AnjaliTTS){
-      AnjaliTTS.speak(reply);
-    }
+
+    speechSynthesis.cancel();
+    speechSynthesis.speak(new SpeechSynthesisUtterance(reply));
   };
 
-  AnjaliSTT.start(); // single-shot listen
+  rec.onerror = ()=>{
+    addMsg("माफ़ करना… आवाज़ समझ नहीं आई।", "anjali");
+  };
+
+  rec.start(); // USER GESTURE CONTEXT ✔️
 }
 </script>
 
