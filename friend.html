@@ -102,10 +102,11 @@ input{
 <!-- FRIEND MEMORY -->
 <script src="core/AnjaliMemory.js"></script>
 
-<!-- FRIEND RESPONSE GENERATOR (NEW) -->
+<!-- FRIEND RESPONSE + TONE -->
 <script src="core/AnjaliResponseGenerator.js"></script>
-  <script src="core/AnjaliToneLayer.js"></script>
-  <!-- FRIEND VOICE (NEW, NOT TEACHER) -->
+<script src="core/AnjaliToneLayer.js"></script>
+
+<!-- FRIEND VOICE (NOT TEACHER) -->
 <script src="voice/anjali_friend_tts.js"></script>
 
 <script>
@@ -135,10 +136,30 @@ function startChat(){
   const welcome = "मैं यहाँ हूँ। धीरे-धीरे जो मन में है, कहो।";
   addMsg(welcome, "anjali");
 
-  if(window.speechSynthesis){
-    speechSynthesis.cancel();
-    speechSynthesis.speak(new SpeechSynthesisUtterance(welcome));
+  if(window.AnjaliFriendTTS){
+    AnjaliFriendTTS.speak(welcome);
   }
+}
+
+/* BUILD FINAL FRIEND REPLY */
+function buildFriendReply(userText){
+  let reply = "";
+
+  // baseline presence
+  const base = AnjaliCore.handleInput(userText);
+  if(base) reply += base + " ";
+
+  // flow + question
+  if(window.AnjaliResponseGenerator){
+    reply += AnjaliResponseGenerator.generate(userText) + " ";
+  }
+
+  // tone & intimacy
+  if(window.AnjaliToneLayer){
+    reply = AnjaliToneLayer.applyTone(reply.trim());
+  }
+
+  return reply.trim();
 }
 
 /* SEND TEXT */
@@ -149,24 +170,16 @@ function sendText(){
 
   addMsg(text, "user");
 
-  /* MEMORY */
-  if (window.AnjaliMemory) {
+  if(window.AnjaliMemory){
     AnjaliMemory.remember(text);
   }
 
-  /* CORE RESPONSE (baseline presence) */
-  let reply = AnjaliCore.handleInput(text);
-
-  /* RESPONSE GENERATOR (always adds flow + question) */
-  if (window.AnjaliResponseGenerator) {
-    const flow = AnjaliResponseGenerator.generate(text);
-    reply = reply ? reply + " " + flow : flow;
-  }
-
+  const reply = buildFriendReply(text);
   addMsg(reply, "anjali");
 
-  speechSynthesis.cancel();
-  speechSynthesis.speak(new SpeechSynthesisUtterance(reply));
+  if(window.AnjaliFriendTTS){
+    AnjaliFriendTTS.speak(reply);
+  }
 }
 
 /* ENTER KEY */
@@ -195,21 +208,16 @@ function startListening(){
     const text = e.results[0][0].transcript.trim();
     addMsg(text, "user");
 
-    if (window.AnjaliMemory) {
+    if(window.AnjaliMemory){
       AnjaliMemory.remember(text);
     }
 
-    let reply = AnjaliCore.handleInput(text);
-
-    if (window.AnjaliResponseGenerator) {
-      const flow = AnjaliResponseGenerator.generate(text);
-      reply = reply ? reply + " " + flow : flow;
-    }
-
+    const reply = buildFriendReply(text);
     addMsg(reply, "anjali");
 
-    speechSynthesis.cancel();
-    speechSynthesis.speak(new SpeechSynthesisUtterance(reply));
+    if(window.AnjaliFriendTTS){
+      AnjaliFriendTTS.speak(reply);
+    }
   };
 
   rec.onerror = ()=>{
