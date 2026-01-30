@@ -1,19 +1,29 @@
 /* ======================================================
-   core/AnjaliResponseGenerator.js — INPUT TYPE AWARE
+   core/AnjaliResponseGenerator.js — INPUT AWARE + NO REPEAT
    PURPOSE:
    - Input Type Guard: identity / statement / question
    - Single Forward Rule (exactly one, when appropriate)
-   - Friend-like, non-intrusive flow
+   - lastForward cache: back-to-back repeat रोकना
    ====================================================== */
 
 (function (global) {
   "use strict";
 
   /* ===============================
+     INTERNAL MICRO MEMORY
+     =============================== */
+  let LAST_FORWARD = "";   // last asked forward (string)
+
+  /* ===============================
      HELPERS
      =============================== */
-  function pick(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
+  function pick(arr, avoid) {
+    if (!arr || !arr.length) return "";
+    if (!avoid) return arr[Math.floor(Math.random() * arr.length)];
+
+    const filtered = arr.filter(x => x !== avoid);
+    if (!filtered.length) return arr[Math.floor(Math.random() * arr.length)];
+    return filtered[Math.floor(Math.random() * filtered.length)];
   }
 
   function normalize(t) {
@@ -26,22 +36,24 @@
   function detectInputType(text) {
     const t = normalize(text);
 
-    // Identity / name / who-are-you
     if (
-      t.includes("कौन") ||
-      t.includes("नाम") ||
       t.includes("आप कौन") ||
-      t.includes("तुम कौन")
+      t.includes("तुम कौन") ||
+      t.includes("नाम") ||
+      t === "अंजली"
     ) {
       return "identity";
     }
 
-    // Question (open)
-    if (t.endsWith("?") || t.startsWith("क्या") || t.startsWith("क्यों") || t.startsWith("कैसे")) {
+    if (
+      t.endsWith("?") ||
+      t.startsWith("क्या") ||
+      t.startsWith("क्यों") ||
+      t.startsWith("कैसे")
+    ) {
       return "question";
     }
 
-    // Statement / declaration
     return "statement";
   }
 
@@ -50,7 +62,7 @@
      =============================== */
   const REACTIONS = {
     neutral: ["हम्म…", "अच्छा…", "समझ रही हूँ…"],
-    warm: ["ठीक है…", "अच्छा लगा सुनकर…"],
+    warm: ["ठीक है…", "अच्छा लगा सुनकर…"]
   };
 
   /* ===============================
@@ -81,7 +93,7 @@
   ];
 
   /* ===============================
-     IDENTITY RESPONSE (FRIENDLY)
+     IDENTITY RESPONSE
      =============================== */
   function identityResponse() {
     return "मैं अंजली हूँ। यहीं तुम्हारे साथ, बातें करने के लिए।";
@@ -93,33 +105,38 @@
   function generate(userText) {
     const type = detectInputType(userText);
 
-    // 1) Identity → direct, no forward
+    // Identity → direct, no forward
     if (type === "identity") {
+      LAST_FORWARD = ""; // reset to avoid weird repeats later
       return identityResponse();
     }
 
-    // 2) Statement → acknowledge, no forced question
+    // Statement → acknowledge only (no forced question)
     if (type === "statement") {
+      LAST_FORWARD = ""; // acknowledge resets pressure
       return pick(REACTIONS.warm);
     }
 
-    // 3) Question → exactly ONE forward (Single Forward Rule)
+    // Question → exactly ONE forward (Single Forward Rule)
     const reaction = pick(REACTIONS.neutral);
 
     const miniPlan = global.AnjaliMiniPlan
       ? global.AnjaliMiniPlan.getContext()
       : null;
 
-    let forward;
+    let pool;
     if (
       miniPlan &&
       miniPlan.inclination &&
       FORWARD_BY_INCLINATION[miniPlan.inclination]
     ) {
-      forward = pick(FORWARD_BY_INCLINATION[miniPlan.inclination]);
+      pool = FORWARD_BY_INCLINATION[miniPlan.inclination];
     } else {
-      forward = pick(GENERIC_FORWARD);
+      pool = GENERIC_FORWARD;
     }
+
+    const forward = pick(pool, LAST_FORWARD);
+    LAST_FORWARD = forward; // cache
 
     return `${reaction} ${forward}`;
   }
