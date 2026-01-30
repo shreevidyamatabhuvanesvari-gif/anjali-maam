@@ -1,122 +1,146 @@
 /* ======================================================
-   core/AnjaliCore.js — CENTRAL CONSCIOUSNESS (v1)
-   PURPOSE:
-   - अंजली की पहचान और निर्णय केंद्र
-   - Friend+++ और Teacher mode को अलग रखना
-   - UI से control हटाकर core में लाना
+   core/AnjaliCore.js — FRIEND+++ CONSCIOUSNESS (REAL)
+   SCOPE:
+   - केवल मित्र मोड
+   - कोई शिक्षक / ज्ञान / उत्तर तय नहीं
+   - बातचीत का प्रवाह और स्पेस संभालता है
    ====================================================== */
 
 (function (global) {
   "use strict";
 
   /* ===============================
-     CORE STATE
+     INTERNAL CONVERSATION STATE
      =============================== */
   const STATE = {
-    mode: "friend",   // friend | teacher
-    lastUserText: "",
-    emotion: "neutral"
+    turnCount: 0,
+    lastSpeechType: null,     // question | statement | silence
+    openness: 0.5,            // 0..1 (बात खोलने की readiness)
+    trust: 0.5                // 0..1 (धीरे-धीरे बढ़ता)
   };
 
   /* ===============================
-     MODE MANAGEMENT
+     SPEECH ACT CLASSIFICATION
+     (NO MEANING, ONLY FORM)
      =============================== */
-  function setMode(mode) {
-    if (mode !== "friend" && mode !== "teacher") return;
-    STATE.mode = mode;
-    localStorage.setItem("ANJALI_ACTIVE_MODE", mode);
-  }
-
-  function getMode() {
-    return STATE.mode;
-  }
-
-  // init from storage
-  const savedMode = localStorage.getItem("ANJALI_ACTIVE_MODE");
-  if (savedMode) STATE.mode = savedMode;
-
-  /* ===============================
-     EMOTION HEURISTICS (v1 SIMPLE)
-     =============================== */
-  function detectEmotion(text) {
-    if (!text) return "neutral";
-
-    const t = text.toLowerCase();
+  function classifySpeech(text) {
+    const t = text.trim();
+    if (!t) return "silence";
 
     if (
-      t.includes("परेशान") ||
-      t.includes("दुख") ||
-      t.includes("उलझ") ||
-      t.includes("थक")
-    ) return "distress";
+      t.endsWith("?") ||
+      t.startsWith("क्या") ||
+      t.startsWith("क्यों") ||
+      t.startsWith("कैसे") ||
+      t.startsWith("कौन")
+    ) {
+      return "question";
+    }
 
-    if (
-      t.includes("खुश") ||
-      t.includes("अच्छा लग")
-    ) return "positive";
-
-    return "neutral";
+    return "statement";
   }
 
   /* ===============================
-     FRIEND+++ RESPONSE (RULE BASED)
+     STATE EVOLUTION
+     (CONVERSATION DYNAMICS)
      =============================== */
-  function friendResponse(text) {
-    switch (STATE.emotion) {
-      case "distress":
-        return "मैं समझ रही हूँ… यह वाकई भारी लग सकता है। मैं यहीं हूँ।";
-      case "positive":
-        return "यह सुनकर अच्छा लगा 🙂";
+  function evolveState(speechType) {
+    STATE.turnCount++;
+
+    // हर turn पर थोड़ा trust बढ़ता है
+    STATE.trust = Math.min(1, STATE.trust + 0.05);
+
+    // openness धीरे-धीरे adjust होती है
+    if (speechType === "statement") {
+      STATE.openness = Math.min(1, STATE.openness + 0.1);
+    }
+    if (speechType === "question") {
+      STATE.openness = Math.max(0.2, STATE.openness - 0.05);
+    }
+
+    STATE.lastSpeechType = speechType;
+  }
+
+  /* ===============================
+     FRIEND STRATEGY SELECTION
+     (NO ANSWERS, ONLY INTENT)
+     =============================== */
+  function chooseStrategy(speechType) {
+    /*
+      Strategy तय करती है:
+      - जवाब देना है या नहीं
+      - जगह खोलनी है या चुप रहना है
+      - बातचीत आगे कैसे बढ़े
+    */
+
+    if (speechType === "question") {
+      return "invite_context";
+    }
+
+    if (speechType === "statement") {
+      if (STATE.openness > 0.6) {
+        return "encourage_expression";
+      }
+      return "hold_space";
+    }
+
+    return "silent_presence";
+  }
+
+  /* ===============================
+     RESPONSE REALIZATION
+     (MINIMAL, NON-SCRIPTED)
+     =============================== */
+  function realizeResponse(strategy) {
+    /*
+      यहाँ कोई ज्ञान नहीं,
+      कोई तथ्य नहीं,
+      कोई hard-coded उत्तर नहीं।
+
+      सिर्फ मित्र की उपस्थिति।
+    */
+
+    switch (strategy) {
+      case "invite_context":
+        return "यह सवाल अपने आप में कुछ कह रहा है। अगर ठीक लगे, तो इसके पीछे की बात बताओ।";
+
+      case "encourage_expression":
+        return "लगता है तुम थोड़ा खुल रहे हो। जो भी मन में आ रहा है, कह सकते हो।";
+
+      case "hold_space":
+        return "मैं सुन रही हूँ। जल्दी नहीं है।";
+
+      case "silent_presence":
       default:
-        return "मैं सुन रही हूँ… आप चाहें तो और बता सकते हैं।";
+        return "मैं यहीं हूँ।";
     }
   }
 
   /* ===============================
-     TEACHER RESPONSE (PIPELINE)
-     =============================== */
-  function teacherResponse(text) {
-    if (!global.ThinkingEngine || !global.PresentationEngine) {
-      return "अभी मेरा मार्गदर्शन भाग तैयार नहीं है।";
-    }
-
-    const result = global.ThinkingEngine.think(text);
-
-    // unknown answer → soft handling
-    if (result && result.unknown) {
-      return "मैं समझ रही हूँ, लेकिन अभी इसका स्पष्ट उत्तर मेरे पास नहीं है।";
-    }
-
-    return global.PresentationEngine.present(
-      result.text,
-      text
-    );
-  }
-
-  /* ===============================
-     MAIN ENTRY POINT
+     PUBLIC ENTRY POINT
      =============================== */
   function handleInput(userText) {
-    if (!userText) return "";
+    const speechType = classifySpeech(userText);
+    evolveState(speechType);
 
-    STATE.lastUserText = userText;
-    STATE.emotion = detectEmotion(userText);
-
-    if (STATE.mode === "friend") {
-      return friendResponse(userText);
-    }
-
-    // teacher mode
-    return teacherResponse(userText);
+    const strategy = chooseStrategy(speechType);
+    return realizeResponse(strategy);
   }
 
   /* ===============================
-     EXPORT
+     OPTIONAL: STATE INSPECTION
+     (DEBUG / FUTURE MEMORY)
+     =============================== */
+  function getState() {
+    return { ...STATE };
+  }
+
+  /* ===============================
+     EXPORT (FRIEND MODE ONLY)
      =============================== */
   global.AnjaliCore = {
-    setMode,
-    getMode,
-    handleInput
+    handleInput,
+    getState
   };
 
 })(window);
