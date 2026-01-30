@@ -1,23 +1,57 @@
 /* ======================================================
-   core/AnjaliResponseGenerator.js — SINGLE FORWARD RULE
+   core/AnjaliResponseGenerator.js — INPUT TYPE AWARE
    PURPOSE:
-   - हर turn में EXACTLY ONE forward (एक सवाल/tease)
-   - Soft MiniPlan (inclination) का हल्का उपयोग
-   - Over-talking रोकना, playful timing बनाए रखना
+   - Input Type Guard: identity / statement / question
+   - Single Forward Rule (exactly one, when appropriate)
+   - Friend-like, non-intrusive flow
    ====================================================== */
 
 (function (global) {
   "use strict";
 
   /* ===============================
-     LIGHT REACTIONS (SHORT)
+     HELPERS
      =============================== */
-  const REACTIONS = [
-    "हम्म…",
-    "अच्छा…",
-    "समझ रही हूँ…",
-    "ठीक है…"
-  ];
+  function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function normalize(t) {
+    return (t || "").toLowerCase().trim();
+  }
+
+  /* ===============================
+     INPUT TYPE GUARD
+     =============================== */
+  function detectInputType(text) {
+    const t = normalize(text);
+
+    // Identity / name / who-are-you
+    if (
+      t.includes("कौन") ||
+      t.includes("नाम") ||
+      t.includes("आप कौन") ||
+      t.includes("तुम कौन")
+    ) {
+      return "identity";
+    }
+
+    // Question (open)
+    if (t.endsWith("?") || t.startsWith("क्या") || t.startsWith("क्यों") || t.startsWith("कैसे")) {
+      return "question";
+    }
+
+    // Statement / declaration
+    return "statement";
+  }
+
+  /* ===============================
+     SHORT REACTIONS
+     =============================== */
+  const REACTIONS = {
+    neutral: ["हम्म…", "अच्छा…", "समझ रही हूँ…"],
+    warm: ["ठीक है…", "अच्छा लगा सुनकर…"],
+  };
 
   /* ===============================
      FORWARD BY INCLINATION (ONE ONLY)
@@ -28,49 +62,55 @@
       "अगर अभी बदलना चाहो तो किस तरह की जगह सोचोगे?"
     ],
     movie: [
-      "आज फिल्म का मूड हल्का है या कुछ सोचने वाला?",
-      "तुम कहानी से ज़्यादा जुड़ते हो या माहौल से?"
+      "आज फिल्म का मूड हल्का है या कुछ सोचने वाला?"
     ],
     food: [
-      "अभी कुछ हल्का अच्छा लगेगा या पेट भरकर?",
-      "तुम्हारा comfort food क्या है?"
+      "अभी कुछ हल्का अच्छा लगेगा या पेट भरकर?"
     ],
     study: [
-      "अभी पढ़ाई manageable लग रही है या भारी?",
-      "किस हिस्से से शुरू करना तुम्हें आसान लगता है?"
+      "अभी पढ़ाई manageable लग रही है या भारी?"
     ],
     casual: [
-      "अभी बस बातें करना अच्छा लग रहा है या कुछ सोचें?",
       "अभी तुम्हारा मन किस तरफ़ है?"
     ]
   };
 
-  /* ===============================
-     GENERIC FORWARD (FALLBACK)
-     =============================== */
   const GENERIC_FORWARD = [
     "अभी तुम्हारा मन किस ओर जा रहा है?",
     "अभी तुम्हें क्या ठीक लगेगा?"
   ];
 
-  function pick(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
+  /* ===============================
+     IDENTITY RESPONSE (FRIENDLY)
+     =============================== */
+  function identityResponse() {
+    return "मैं अंजली हूँ। यहीं तुम्हारे साथ, बातें करने के लिए।";
   }
 
   /* ===============================
-     MAIN GENERATOR — SINGLE FORWARD
+     MAIN GENERATOR
      =============================== */
   function generate(userText) {
-    // 1) हल्की प्रतिक्रिया (एक)
-    const reaction = pick(REACTIONS);
+    const type = detectInputType(userText);
 
-    // 2) Soft MiniPlan से inclination (अगर हो)
+    // 1) Identity → direct, no forward
+    if (type === "identity") {
+      return identityResponse();
+    }
+
+    // 2) Statement → acknowledge, no forced question
+    if (type === "statement") {
+      return pick(REACTIONS.warm);
+    }
+
+    // 3) Question → exactly ONE forward (Single Forward Rule)
+    const reaction = pick(REACTIONS.neutral);
+
     const miniPlan = global.AnjaliMiniPlan
       ? global.AnjaliMiniPlan.getContext()
       : null;
 
     let forward;
-
     if (
       miniPlan &&
       miniPlan.inclination &&
@@ -81,7 +121,6 @@
       forward = pick(GENERIC_FORWARD);
     }
 
-    // 🔒 SINGLE FORWARD RULE: बस यही बोलेगी
     return `${reaction} ${forward}`;
   }
 
