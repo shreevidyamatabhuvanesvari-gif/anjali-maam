@@ -1,9 +1,9 @@
 /* ======================================================
-   core/AnjaliCore.js — FRIEND+++ CONSCIOUSNESS (REAL)
+   core/AnjaliCore.js — FRIEND+++ CONSCIOUSNESS (SILENT)
    SCOPE:
    - केवल मित्र मोड
-   - कोई शिक्षक / ज्ञान / उत्तर तय नहीं
-   - बातचीत का प्रवाह और स्पेस संभालता है
+   - Core सोचता है, state संभालता है
+   - ❌ बोलता नहीं (silent baseline)
    ====================================================== */
 
 (function (global) {
@@ -24,7 +24,7 @@
      (NO MEANING, ONLY FORM)
      =============================== */
   function classifySpeech(text) {
-    const t = text.trim();
+    const t = (text || "").trim();
     if (!t) return "silence";
 
     if (
@@ -36,7 +36,6 @@
     ) {
       return "question";
     }
-
     return "statement";
   }
 
@@ -63,57 +62,14 @@
 
   /* ===============================
      FRIEND STRATEGY SELECTION
-     (NO ANSWERS, ONLY INTENT)
+     (INTERNAL ONLY)
      =============================== */
   function chooseStrategy(speechType) {
-    /*
-      Strategy तय करती है:
-      - जवाब देना है या नहीं
-      - जगह खोलनी है या चुप रहना है
-      - बातचीत आगे कैसे बढ़े
-    */
-
-    if (speechType === "question") {
-      return "invite_context";
-    }
-
+    if (speechType === "question") return "invite_context";
     if (speechType === "statement") {
-      if (STATE.openness > 0.6) {
-        return "encourage_expression";
-      }
-      return "hold_space";
+      return STATE.openness > 0.6 ? "encourage_expression" : "hold_space";
     }
-
     return "silent_presence";
-  }
-
-  /* ===============================
-     RESPONSE REALIZATION
-     (MINIMAL, NON-SCRIPTED)
-     =============================== */
-  function realizeResponse(strategy) {
-    /*
-      यहाँ कोई ज्ञान नहीं,
-      कोई तथ्य नहीं,
-      कोई hard-coded उत्तर नहीं।
-
-      सिर्फ मित्र की उपस्थिति।
-    */
-
-    switch (strategy) {
-      case "invite_context":
-        return "यह सवाल अपने आप में कुछ कह रहा है। अगर ठीक लगे, तो इसके पीछे की बात बताओ।";
-
-      case "encourage_expression":
-        return "लगता है तुम थोड़ा खुल रहे हो। जो भी मन में आ रहा है, कह सकते हो।";
-
-      case "hold_space":
-        return "मैं सुन रही हूँ। जल्दी नहीं है।";
-
-      case "silent_presence":
-      default:
-        return "मैं यहीं हूँ।";
-    }
   }
 
   /* ===============================
@@ -123,13 +79,16 @@
     const speechType = classifySpeech(userText);
     evolveState(speechType);
 
-    const strategy = chooseStrategy(speechType);
-    return realizeResponse(strategy);
+    // Strategy internal रूप से तय होती है,
+    // लेकिन Core अब कुछ भी बोलेगा नहीं।
+    chooseStrategy(speechType);
+
+    // 🔕 Silent baseline: कोई टेक्स्ट नहीं
+    return "";
   }
 
   /* ===============================
      OPTIONAL: STATE INSPECTION
-     (DEBUG / FUTURE MEMORY)
      =============================== */
   function getState() {
     return { ...STATE };
